@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import org.alshar.common.StaticArray;
+import org.alshar.kaminpar_shm.kaminpar;
 import org.alshar.kaminpar_shm.kaminpar.*;
 import static org.alshar.Presets.*;
 
@@ -74,17 +75,17 @@ public class KaMinPar {
         }
 
         // Allocate graph data structures and read graph file
-        StaticArray<EdgeID> xadj = new StaticArray<>();
-        StaticArray<NodeID> adjncy = new StaticArray<>();
-        StaticArray<NodeWeight> vwgt = new StaticArray<>();
-        StaticArray<EdgeWeight> adjwgt = new StaticArray<>();
+        StaticArray<EdgeID> xadj = new StaticArray<>(0); // Initialize with size 0
+        StaticArray<NodeID> adjncy = new StaticArray<>(0);
+        StaticArray<NodeWeight> vwgt = new StaticArray<>(0);
+        StaticArray<EdgeWeight> adjwgt = new StaticArray<>(0);
 
         try {
             if (app.validate) {
-                GraphIO.read(app.graphFilename, xadj, adjncy, vwgt, adjwgt, true);
+                ShmIO.Metis.read(app.graphFilename, xadj, adjncy, vwgt, adjwgt, true);
                 GraphValidator.validateUndirectedGraph(xadj, adjncy, vwgt, adjwgt);
             } else {
-                GraphIO.read(app.graphFilename, xadj, adjncy, vwgt, adjwgt, false);
+                ShmIO.Metis.read(app.graphFilename, xadj, adjncy, vwgt, adjwgt, false);
             }
         } catch (IOException e) {
             System.err.println("Error reading graph file: " + e.getMessage());
@@ -92,10 +93,13 @@ public class KaMinPar {
         }
 
         int n = xadj.size() - 1;
-        List<BlockID> partition = new ArrayList<>(n);
+        BlockID[] partition = new BlockID[n];
+        for (int i = 0; i < n; i++) {
+            partition[i] = new BlockID(0); // Initialize with default values
+        }
 
         // Compute graph partition
-        KaMinParPartitioner partitioner = new KaMinParPartitioner(app.numThreads, createDefaultContext());
+        kaminpar.KaMinPar partitioner = new kaminpar.KaMinPar(app.numThreads, ctx);
         partitioner.reseed(app.seed);
 
         if (app.quiet) {
@@ -107,7 +111,7 @@ public class KaMinPar {
         partitioner.setMaxTimerDepth(app.maxTimerDepth);
         partitioner.takeGraph(n, xadj, adjncy, vwgt, adjwgt);
 
-        partitioner.computePartition(app.k, partition);
+        partitioner.computePartition(new BlockID(app.k), partition);
 
         // Save graph partition
         if (!app.partitionFilename.isEmpty()) {
@@ -129,7 +133,6 @@ public class KaMinPar {
             String preset;
 
             public void setPreset(String preset) {
-                ctx = Presets.createContextByPresetName(preset);
             }
         });
 

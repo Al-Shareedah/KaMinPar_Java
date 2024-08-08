@@ -18,6 +18,10 @@ public class StaticArray<T> implements Iterable<T> {
         this.array = Arrays.copyOf(initialArray, initialArray.length);
         this.size = initialArray.length;
     }
+    public StaticArray(StaticArray<T> other) {
+        this.array = Arrays.copyOf(other.array, other.size);
+        this.size = other.size;
+    }
 
     public T get(int index) {
         checkIndex(index);

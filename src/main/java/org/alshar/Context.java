@@ -152,13 +152,15 @@ public class Context {
     }
 
     public static class PartitionContext {
-        double epsilon;
-        int k;
-        NodeID n = kaminpar.kInvalidNodeID;
-        EdgeID m = kaminpar.kInvalidEdgeID;
-        NodeWeight totalNodeWeight = kaminpar.kInvalidNodeWeight;
+        public double epsilon;
+        public int k;
+        NodeID n = new NodeID(kaminpar.kInvalidNodeID);
+        EdgeID m = new EdgeID(kaminpar.kInvalidEdgeID);
+        public NodeWeight totalNodeWeight = kaminpar.kInvalidNodeWeight;
         EdgeWeight totalEdgeWeight = kaminpar.kInvalidEdgeWeight;
         NodeWeight maxNodeWeight = kaminpar.kInvalidNodeWeight;
+
+        BlockWeightsContext blockWeights = new BlockWeightsContext();
 
         void setupBlockWeights() {
             blockWeights.setup(this);
@@ -175,7 +177,7 @@ public class Context {
     }
 
     public static class ParallelContext {
-        int numThreads;
+        public int numThreads;
     }
 
     public static class DebugContext {
@@ -266,8 +268,8 @@ public class Context {
         public List<BlockWeight> allPerfectlyBalanced() {
             return perfectlyBalancedBlockWeights;
         }
-
     }
+
 
     public GraphOrdering rearrangeBy;
     public PartitioningContext partitioning;

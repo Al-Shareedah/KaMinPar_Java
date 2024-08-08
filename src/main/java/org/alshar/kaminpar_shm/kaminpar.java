@@ -2,15 +2,23 @@ package org.alshar.kaminpar_shm;
 
 import org.alshar.Context;
 import org.alshar.Graph;
+import org.alshar.common.Logger;
 import org.alshar.common.StaticArray;
+import org.alshar.common.Random_shm;
+import org.alshar.common.cio;
 
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class kaminpar {
-
+    public static final int kInvalidNodeID = Integer.MAX_VALUE;
+    public static final int kInvalidEdgeID = Integer.MAX_VALUE;
+    public static final NodeWeight kInvalidNodeWeight = new NodeWeight(Integer.MAX_VALUE);
+    public static final EdgeWeight kInvalidEdgeWeight = new EdgeWeight(Integer.MAX_VALUE);
+    public static final BlockWeight kInvalidBlockWeight = new BlockWeight(Integer.MAX_VALUE);
     public static class KaMinPar {
         private int numThreads;
         private int maxTimerDepth = Integer.MAX_VALUE;
@@ -18,17 +26,18 @@ public class kaminpar {
         private Context ctx;
         private Graph graph;
         private boolean wasRearranged = false;
+        private ThreadPoolExecutor gc;
 
         public KaMinPar(int numThreads, Context ctx) {
             this.numThreads = numThreads;
             this.ctx = ctx;
-            this.gc = Executors.newFixedThreadPool(numThreads);
+            this.gc = (ThreadPoolExecutor) Executors.newFixedThreadPool(numThreads);
             resetGlobalTimer();
         }
 
         public static void reseed(int seed) {
             // Logic to reseed
-            Random.getInstance().setSeed(seed);
+            Random_shm.reseed(seed);
         }
 
         public void setOutputLevel(OutputLevel outputLevel) {
@@ -43,20 +52,21 @@ public class kaminpar {
             return ctx;
         }
 
-        public void takeGraph(NodeID n, EdgeID[] xadj, NodeID[] adjncy, NodeWeight[] vwgt, EdgeWeight[] adjwgt) {
+        public void takeGraph(int n, StaticArray<EdgeID> xadj, StaticArray<NodeID> adjncy, StaticArray<NodeWeight> vwgt, StaticArray<EdgeWeight> adjwgt) {
             borrowAndMutateGraph(n, xadj, adjncy, vwgt, adjwgt);
         }
 
-        public void borrowAndMutateGraph(NodeID n, EdgeID[] xadj, NodeID[] adjncy, NodeWeight[] vwgt, EdgeWeight[] adjwgt) {
+        public void borrowAndMutateGraph(int n, StaticArray<EdgeID> xadj, StaticArray<NodeID> adjncy, StaticArray<NodeWeight> vwgt, StaticArray<EdgeWeight> adjwgt) {
             // Logic to borrow and mutate graph
-            EdgeID m = new EdgeID(xadj[(int) n.value].value);
+            EdgeID m = new EdgeID(xadj.get(n).value);
             StaticArray<EdgeID> nodes = new StaticArray<>(xadj);
             StaticArray<NodeID> edges = new StaticArray<>(adjncy);
-            StaticArray<NodeWeight> nodeWeights = (vwgt == null) ? new StaticArray<>(0) : new StaticArray<>(vwgt);
-            StaticArray<EdgeWeight> edgeWeights = (adjwgt == null) ? new StaticArray<>(0) : new StaticArray<>(adjwgt);
+            StaticArray<NodeWeight> nodeWeights = (vwgt.size() == 0) ? new StaticArray<>(0) : new StaticArray<>(vwgt);
+            StaticArray<EdgeWeight> edgeWeights = (adjwgt.size() == 0) ? new StaticArray<>(0) : new StaticArray<>(adjwgt);
 
             graph = new Graph(nodes, edges, nodeWeights, edgeWeights, false);
         }
+
 
         public void copyGraph(NodeID n, EdgeID[] xadj, NodeID[] adjncy, NodeWeight[] vwgt, EdgeWeight[] adjwgt) {
             // Logic to copy graph
@@ -110,7 +120,7 @@ public class kaminpar {
 
             double originalEpsilon = ctx.partition.epsilon;
             ctx.parallel.numThreads = numThreads;
-            ctx.partition.k = k;
+            ctx.partition.k = k.value;
 
             // Setup graph dependent context parameters
             ctx.setup(graph);
@@ -219,17 +229,17 @@ public class kaminpar {
     }
 
     public static class NodeID {
-        public long value;
+        public int value;
 
-        public NodeID(long value) {
+        public NodeID(int value) {
             this.value = value;
         }
     }
 
     public static class EdgeID {
-        public long value;
+        public int value;
 
-        public EdgeID(long value) {
+        public EdgeID(int value) {
             this.value = value;
         }
     }
