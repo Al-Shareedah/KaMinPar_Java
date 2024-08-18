@@ -1,4 +1,4 @@
-package org.alshar.common;
+package org.alshar.common.datastructures;
 
 import java.util.Arrays;
 import java.util.Iterator;
@@ -8,11 +8,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class StaticArray<T> implements Iterable<T> {
     private Object[] array;
     private int size;
+    private int unrestrictedSize;
 
     public StaticArray(int size) {
         this.array = new Object[size];
         this.size = size;
     }
+    public StaticArray(int startIndex, int length, Object[] sourceArray) {
+        this.size = length;
+        this.array = Arrays.copyOfRange(sourceArray, startIndex, startIndex + length);
+    }
+
 
     public StaticArray(T[] initialArray) {
         this.array = Arrays.copyOf(initialArray, initialArray.length);
@@ -27,6 +33,7 @@ public class StaticArray<T> implements Iterable<T> {
         checkIndex(index);
         return (T) array[index];
     }
+
 
     public void set(int index, T value) {
         checkIndex(index);
@@ -68,6 +75,11 @@ public class StaticArray<T> implements Iterable<T> {
             throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
         }
     }
+    public void clear() {
+        Arrays.fill(array, 0, size, 0); // Clear the array elements
+        size = 0; // Optionally reset the size
+    }
+
 
     @Override
     public Iterator<T> iterator() {
@@ -89,6 +101,27 @@ public class StaticArray<T> implements Iterable<T> {
             }
             return (T) array[currentIndex++];
         }
+        /**
+         * Restricts the size of the array to the specified new size.
+         * The new size must be less than or equal to the current size.
+         *
+         * @param newSize the new restricted size of the array.
+         */
+
+    }
+    public void restrict(int newSize) {
+        if (newSize > size) {
+            throw new IllegalArgumentException("Restricted size must be less than or equal to the current size.");
+        }
+        unrestrictedSize = size; // Save the original size
+        size = newSize; // Restrict the size
+    }
+
+    /**
+     * Restores the array to its original size before restriction.
+     */
+    public void unrestrict() {
+        size = unrestrictedSize; // Restore the original size
     }
 
     public static <T> StaticArray<T> copy(StaticArray<T> original) {

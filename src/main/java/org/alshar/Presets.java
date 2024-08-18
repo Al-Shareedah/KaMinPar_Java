@@ -1,5 +1,9 @@
 package org.alshar;
 
+import org.alshar.common.context.*;
+import org.alshar.common.datastructures.BlockID;
+import org.alshar.common.enums.*;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -39,47 +43,62 @@ public class Presets {
 
     public static Context createDefaultContext() {
         Context ctx = new Context();
-        ctx.rearrangeBy = Context.GraphOrdering.DEGREE_BUCKETS;
-        ctx.partitioning = new Context.PartitioningContext();
-        ctx.partitioning.mode = Context.PartitioningMode.DEEP;
-        ctx.partitioning.deepInitialPartitioningMode = Context.InitialPartitioningMode.SEQUENTIAL;
+
+        // Set Graph Ordering
+        ctx.rearrangeBy = GraphOrdering.DEGREE_BUCKETS;
+
+        // Set Partitioning Context
+        ctx.partitioning = new PartitioningContext();
+        ctx.partitioning.mode = PartitioningMode.DEEP;
+        ctx.partitioning.deepInitialPartitioningMode = InitialPartitioningMode.SEQUENTIAL;
         ctx.partitioning.deepInitialPartitioningLoad = 1.0;
 
-        ctx.partition = new Context.PartitionContext();
-        ctx.partition.epsilon = 0.03;
-        ctx.partition.k = Integer.MAX_VALUE; // kInvalidBlockID equivalent
+        // Set Partition Context
+        ctx.partition = new PartitionContext();
+        ctx.partition.epsilon = 0.029999999999999999;
+        ctx.partition.k = new BlockID(Integer.MAX_VALUE); // kInvalidBlockID equivalent
 
-        ctx.coarsening = new Context.CoarseningContext();
-        ctx.coarsening.algorithm = Context.ClusteringAlgorithm.LABEL_PROPAGATION;
-        ctx.coarsening.lp = new Context.LabelPropagationCoarseningContext();
+        // Set Coarsening Context
+        ctx.coarsening = new CoarseningContext();
+        ctx.coarsening.algorithm = ClusteringAlgorithm.LABEL_PROPAGATION;
+
+        // Label Propagation Coarsening Context
+        ctx.coarsening.lp = new LabelPropagationCoarseningContext();
         ctx.coarsening.lp.numIterations = 5;
         ctx.coarsening.lp.largeDegreeThreshold = 1000000;
         ctx.coarsening.lp.maxNumNeighbors = 200000;
-        ctx.coarsening.lp.twoHopStrategy = Context.TwoHopStrategy.MATCH_THREADWISE;
+        ctx.coarsening.lp.twoHopStrategy = TwoHopStrategy.MATCH_THREADWISE;
         ctx.coarsening.lp.twoHopThreshold = 0.5;
-        ctx.coarsening.lp.isolatedNodesStrategy = Context.IsolatedNodesClusteringStrategy.KEEP;
-        ctx.coarsening.contractionLimit = 2000;
+        ctx.coarsening.lp.isolatedNodesStrategy = IsolatedNodesClusteringStrategy.KEEP;
+
+        // Additional Coarsening Settings
+        ctx.coarsening.contractionLimit = 1068;
         ctx.coarsening.enforceContractionLimit = false;
         ctx.coarsening.convergenceThreshold = 0.05;
-        ctx.coarsening.clusterWeightLimit = Context.ClusterWeightLimit.EPSILON_BLOCK_WEIGHT;
+        ctx.coarsening.clusterWeightLimit = ClusterWeightLimit.EPSILON_BLOCK_WEIGHT;
         ctx.coarsening.clusterWeightMultiplier = 1.0;
 
-        ctx.initialPartitioning = new Context.InitialPartitioningContext();
-        ctx.initialPartitioning.coarsening = new Context.InitialCoarseningContext();
+        // Set Initial Partitioning Context
+        ctx.initialPartitioning = new InitialPartitioningContext();
+
+        // Initial Coarsening Context within Initial Partitioning
+        ctx.initialPartitioning.coarsening = new InitialCoarseningContext();
         ctx.initialPartitioning.coarsening.contractionLimit = 20;
         ctx.initialPartitioning.coarsening.convergenceThreshold = 0.05;
         ctx.initialPartitioning.coarsening.largeDegreeThreshold = 1000000;
-        ctx.initialPartitioning.coarsening.clusterWeightLimit = Context.ClusterWeightLimit.BLOCK_WEIGHT;
+        ctx.initialPartitioning.coarsening.clusterWeightLimit = ClusterWeightLimit.BLOCK_WEIGHT;
         ctx.initialPartitioning.coarsening.clusterWeightMultiplier = 1.0 / 12.0;
 
-        ctx.initialPartitioning.refinement = new Context.InitialRefinementContext();
+        // Initial Refinement Context within Initial Partitioning
+        ctx.initialPartitioning.refinement = new InitialRefinementContext();
         ctx.initialPartitioning.refinement.disabled = false;
-        ctx.initialPartitioning.refinement.stoppingRule = Context.FMStoppingRule.SIMPLE;
+        ctx.initialPartitioning.refinement.stoppingRule = FMStoppingRule.SIMPLE;
         ctx.initialPartitioning.refinement.numFruitlessMoves = 100;
         ctx.initialPartitioning.refinement.alpha = 1.0;
         ctx.initialPartitioning.refinement.numIterations = 5;
         ctx.initialPartitioning.refinement.improvementAbortionThreshold = 0.0001;
 
+        // Initial Partitioning Repetition Context
         ctx.initialPartitioning.repetitionMultiplier = 1.0;
         ctx.initialPartitioning.minNumRepetitions = 10;
         ctx.initialPartitioning.minNumNonAdaptiveRepetitions = 5;
@@ -87,15 +106,19 @@ public class Presets {
         ctx.initialPartitioning.numSeedIterations = 1;
         ctx.initialPartitioning.useAdaptiveBipartitionerSelection = true;
 
-        ctx.refinement = new Context.RefinementContext();
-        ctx.refinement.algorithms.add(Context.RefinementAlgorithm.GREEDY_BALANCER);
-        ctx.refinement.algorithms.add(Context.RefinementAlgorithm.LABEL_PROPAGATION);
-        ctx.refinement.lp = new Context.LabelPropagationRefinementContext();
+        // Set Refinement Context
+        ctx.refinement = new RefinementContext();
+        ctx.refinement.algorithms.add(RefinementAlgorithm.GREEDY_BALANCER);
+        ctx.refinement.algorithms.add(RefinementAlgorithm.LABEL_PROPAGATION);
+
+        // Label Propagation Refinement Context within Refinement
+        ctx.refinement.lp = new LabelPropagationRefinementContext();
         ctx.refinement.lp.numIterations = 5;
         ctx.refinement.lp.largeDegreeThreshold = 1000000;
         ctx.refinement.lp.maxNumNeighbors = Integer.MAX_VALUE;
 
-        ctx.refinement.kwayFM = new Context.KwayFMRefinementContext();
+        // k-way FM Refinement Context within Refinement
+        ctx.refinement.kwayFM = new KwayFMRefinementContext();
         ctx.refinement.kwayFM.numSeedNodes = 10;
         ctx.refinement.kwayFM.alpha = 1.0;
         ctx.refinement.kwayFM.numIterations = 10;
@@ -103,23 +126,32 @@ public class Presets {
         ctx.refinement.kwayFM.unlockSeedNodes = true;
         ctx.refinement.kwayFM.useExactAbortionThreshold = false;
         ctx.refinement.kwayFM.abortionThreshold = 0.999;
-        ctx.refinement.kwayFM.gainCacheStrategy = Context.GainCacheStrategy.DENSE;
+        ctx.refinement.kwayFM.gainCacheStrategy = GainCacheStrategy.DENSE;
         ctx.refinement.kwayFM.constantHighDegreeThreshold = 0;
         ctx.refinement.kwayFM.kBasedHighDegreeThreshold = 1.0;
         ctx.refinement.kwayFM.dbgComputeBatchStats = false;
 
-        ctx.refinement.jet = new Context.JetRefinementContext();
+        // Jet Refinement Context within Refinement
+        ctx.refinement.jet = new JetRefinementContext();
         ctx.refinement.jet.numIterations = 0;
         ctx.refinement.jet.numFruitlessIterations = 12;
         ctx.refinement.jet.fruitlessThreshold = 0.999;
         ctx.refinement.jet.fineNegativeGainFactor = 0.25;
         ctx.refinement.jet.coarseNegativeGainFactor = 0.75;
-        ctx.refinement.jet.balancingAlgorithm = Context.RefinementAlgorithm.GREEDY_BALANCER;
+        ctx.refinement.jet.balancingAlgorithm = RefinementAlgorithm.GREEDY_BALANCER;
 
-        ctx.parallel = new Context.ParallelContext();
+        // MtKaHyPar Refinement Context within Refinement
+        ctx.refinement.mtkahypar = new MtKaHyParRefinementContext();
+        ctx.refinement.mtkahypar.configFilename = "";
+        ctx.refinement.mtkahypar.fineConfigFilename = "";
+        ctx.refinement.mtkahypar.coarseConfigFilename = "";
+
+        // Set Parallel Context
+        ctx.parallel = new ParallelContext();
         ctx.parallel.numThreads = 1;
 
-        ctx.debug = new Context.DebugContext();
+        // Set Debug Context
+        ctx.debug = new DebugContext();
         ctx.debug.graphName = "";
         ctx.debug.dumpGraphFilename = "n%n_m%m_k%k_seed%seed.metis";
         ctx.debug.dumpPartitionFilename = "n%n_m%m_k%k_seed%seed.part";
@@ -135,7 +167,7 @@ public class Presets {
 
     public static Context createFastContext() {
         Context ctx = createDefaultContext();
-        ctx.partitioning.deepInitialPartitioningMode = Context.InitialPartitioningMode.ASYNCHRONOUS_PARALLEL;
+        ctx.partitioning.deepInitialPartitioningMode = InitialPartitioningMode.ASYNCHRONOUS_PARALLEL;
         ctx.partitioning.deepInitialPartitioningLoad = 0.5;
         ctx.coarsening.lp.numIterations = 1;
         ctx.initialPartitioning.minNumRepetitions = 1;
@@ -155,10 +187,10 @@ public class Presets {
     public static Context createStrongContext() {
         Context ctx = createDefaultContext();
         ctx.refinement.algorithms = Arrays.asList(
-                Context.RefinementAlgorithm.GREEDY_BALANCER,
-                Context.RefinementAlgorithm.LABEL_PROPAGATION,
-                Context.RefinementAlgorithm.KWAY_FM,
-                Context.RefinementAlgorithm.GREEDY_BALANCER
+                RefinementAlgorithm.GREEDY_BALANCER,
+                RefinementAlgorithm.LABEL_PROPAGATION,
+                RefinementAlgorithm.KWAY_FM,
+                RefinementAlgorithm.GREEDY_BALANCER
         );
         return ctx;
     }
@@ -166,8 +198,8 @@ public class Presets {
     public static Context createJetContext() {
         Context ctx = createDefaultContext();
         ctx.refinement.algorithms = Arrays.asList(
-                Context.RefinementAlgorithm.GREEDY_BALANCER,
-                Context.RefinementAlgorithm.JET
+                RefinementAlgorithm.GREEDY_BALANCER,
+                RefinementAlgorithm.JET
         );
         return ctx;
     }

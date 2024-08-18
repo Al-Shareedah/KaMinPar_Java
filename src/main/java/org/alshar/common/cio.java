@@ -1,11 +1,16 @@
 package org.alshar.common;
 import org.alshar.Context;
-import org.alshar.common.LoggerMacros;
-import java.io.PrintStream;
 
 import java.io.PrintStream;
+
+import org.alshar.common.Math.Random_shm;
+import org.alshar.common.enums.*;
+import org.alshar.common.context.*;
+
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.stream.Collectors;
 
 import static org.alshar.common.LoggerMacros.LOG;
 
@@ -24,15 +29,15 @@ public class cio {
     }
 
     public static void printKaminparBanner() {
-        LOG.log("KaMinPar - KaHIP Graph Partitioning").flush();
+        LOG.log("KaMinPar - KaHIP Graph Partitioning");
     }
 
     public static void printDkaminparBanner() {
-        LOG.log("DKaMinPar - Distributed KaHIP Graph Partitioning").flush();
+        LOG.log("DKaMinPar - Distributed KaHIP Graph Partitioning");
     }
 
     public static void printBuildIdentifier() {
-        LOG.log("Build Identifier: " + Environment.GIT_SHA1).flush();
+        LOG.log("Build Identifier: " + Environment.GIT_SHA1);
     }
 
     public static void printBuildDatatypes(Class<?> nodeIDClass, Class<?> edgeIDClass, Class<?> nodeWeightClass, Class<?> edgeWeightClass) {
@@ -53,16 +58,16 @@ public class cio {
 
     // Additional print methods for various contexts...
 
-    public static void print(Context.CoarseningContext c_ctx, PrintStream out) {
+    public static void print(CoarseningContext c_ctx, PrintStream out) {
         out.println("Contraction limit:            " + c_ctx.contractionLimit);
         out.println("Cluster weight limit:         " + c_ctx.clusterWeightLimit + " x " + c_ctx.clusterWeightMultiplier);
         out.println("Clustering algorithm:         " + c_ctx.algorithm);
-        if (c_ctx.algorithm == Context.ClusteringAlgorithm.LABEL_PROPAGATION) {
+        if (c_ctx.algorithm == ClusteringAlgorithm.LABEL_PROPAGATION) {
             print(c_ctx.lp, out);
         }
     }
 
-    public static void print(Context.LabelPropagationCoarseningContext lp_ctx, PrintStream out) {
+    public static void print(LabelPropagationCoarseningContext lp_ctx, PrintStream out) {
         out.println("  Number of iterations:       " + lp_ctx.numIterations);
         out.println("  High degree threshold:      " + lp_ctx.largeDegreeThreshold);
         out.println("  Max degree:                 " + lp_ctx.maxNumNeighbors);
@@ -71,17 +76,20 @@ public class cio {
         out.println("  Isolated nodes:             " + lp_ctx.isolatedNodesStrategy);
     }
 
-    public static void print(Context.InitialPartitioningContext i_ctx, PrintStream out) {
+    public static void print(InitialPartitioningContext i_ctx, PrintStream out) {
         out.println("Adaptive algorithm selection: " + (i_ctx.useAdaptiveBipartitionerSelection ? "yes" : "no"));
     }
 
-    public static void print(Context.RefinementContext r_ctx, PrintStream out) {
-        out.println("Refinement algorithms:        [" + String.join(" -> ", r_ctx.algorithms) + "]");
-        if (r_ctx.algorithms.contains(Context.RefinementAlgorithm.LABEL_PROPAGATION)) {
+    public static void print(RefinementContext r_ctx, PrintStream out) {
+        List<String> algorithms = r_ctx.algorithms.stream()
+                .map(Enum::name)
+                .collect(Collectors.toList());
+        out.println("Refinement algorithms:        [" + String.join(" -> ", algorithms) + "]");
+        if (r_ctx.algorithms.contains(RefinementAlgorithm.LABEL_PROPAGATION)) {
             out.println("Label propagation:");
             out.println("  Number of iterations:       " + r_ctx.lp.numIterations);
         }
-        if (r_ctx.algorithms.contains(Context.RefinementAlgorithm.KWAY_FM)) {
+        if (r_ctx.algorithms.contains(RefinementAlgorithm.KWAY_FM)) {
             out.println("k-way FM:");
             out.println("  Number of iterations:       " + r_ctx.kwayFM.numIterations
                     + " [or improvement drops below < " + 100.0 * (1.0 - r_ctx.kwayFM.abortionThreshold) + "%]");
@@ -90,14 +98,14 @@ public class cio {
                     + (r_ctx.kwayFM.unlockSeedNodes ? "unlock" : "lock") + ", locally moved nodes:"
                     + (r_ctx.kwayFM.unlockLocallyMovedNodes ? "unlock" : "lock"));
             out.println("  Gain cache:                 " + r_ctx.kwayFM.gainCacheStrategy);
-            if (r_ctx.kwayFM.gainCacheStrategy == Context.GainCacheStrategy.HYBRID) {
+            if (r_ctx.kwayFM.gainCacheStrategy == GainCacheStrategy.HYBRID) {
                 out.println("  High-degree threshold:");
                 out.println("    based on k:               " + r_ctx.kwayFM.kBasedHighDegreeThreshold);
                 out.println("    constant:                 " + r_ctx.kwayFM.constantHighDegreeThreshold);
             }
         }
-        if (r_ctx.algorithms.contains(Context.RefinementAlgorithm.JET)) {
-            out.println("Jet refinement:               " + Context.RefinementAlgorithm.JET);
+        if (r_ctx.algorithms.contains(RefinementAlgorithm.JET)) {
+            out.println("Jet refinement:               " + RefinementAlgorithm.JET);
             out.println("  Number of iterations:       max " + r_ctx.jet.numIterations + ", or "
                     + r_ctx.jet.numFruitlessIterations + " fruitless (improvement < "
                     + 100.0 * (1 - r_ctx.jet.fruitlessThreshold) + "%)");
@@ -107,31 +115,31 @@ public class cio {
         }
     }
 
-    public static void print(Context.PartitionContext p_ctx, PrintStream out) {
-        final long maxBlockWeight = p_ctx.blockWeights.max(0);
-        final long size = Math.max(Math.max(p_ctx.n, p_ctx.m), maxBlockWeight);
+    public static void print(PartitionContext p_ctx, PrintStream out) {
+        final long maxBlockWeight = p_ctx.blockWeights.max(0).value;
+        final long size = Math.max(Math.max(p_ctx.n.value, p_ctx.m.value), maxBlockWeight);
         final int width = (int) Math.ceil(Math.log10(size));
 
-        out.printf("  Number of nodes:            %" + width + "d", p_ctx.n);
-        if (p_ctx.n == p_ctx.totalNodeWeight) {
+        out.printf("  Number of nodes:            %" + width + "d", p_ctx.n.value);
+        if (p_ctx.n.value == p_ctx.totalNodeWeight.value) {
             out.println(" (unweighted)");
         } else {
             out.println(" (total weight: " + p_ctx.totalNodeWeight + ")");
         }
-        out.printf("  Number of edges:            %" + width + "d", p_ctx.m);
-        if (p_ctx.m == p_ctx.totalEdgeWeight) {
+        out.printf("  Number of edges:            %" + width + "d", p_ctx.m.value);
+        if (p_ctx.m.value == p_ctx.totalEdgeWeight.value) {
             out.println(" (unweighted)");
         } else {
             out.println(" (total weight: " + p_ctx.totalEdgeWeight + ")");
         }
-        out.println("Number of blocks:             " + p_ctx.k);
-        out.println("Maximum block weight:         " + p_ctx.blockWeights.max(0) + " ("
-                + p_ctx.blockWeights.perfectlyBalanced(0) + " + " + 100 * p_ctx.epsilon + "%)");
+        out.println("Number of blocks:             " + p_ctx.k.value);
+        out.println("Maximum block weight:         " + p_ctx.blockWeights.max(0).value + " ("
+                + p_ctx.blockWeights.perfectlyBalanced(0).value + " + " + 100 * p_ctx.epsilon + "%)");
     }
 
-    public static void print(Context.PartitioningContext p_ctx, PrintStream out) {
+    public static void print(PartitioningContext p_ctx, PrintStream out) {
         out.println("Partitioning mode:            " + p_ctx.mode);
-        if (p_ctx.mode == Context.PartitioningMode.DEEP) {
+        if (p_ctx.mode == PartitioningMode.DEEP) {
             out.println("  Deep initial part. mode:    " + p_ctx.deepInitialPartitioningMode);
             out.println("  Deep initial part. load:    " + p_ctx.deepInitialPartitioningLoad);
         }

@@ -1,9 +1,15 @@
 package org.alshar;
 
-import org.alshar.common.StaticArray;
-import org.alshar.kaminpar_shm.kaminpar.*;
-import org.alshar.common.DegreeBuckets;
+import org.alshar.common.GraphUtils.ContractResult;
+import org.alshar.common.GraphUtils.Edge;
+import org.alshar.common.GraphUtils.MemoryContext;
+import org.alshar.common.ParallelUtils.ParallelFor;
+import org.alshar.common.datastructures.*;
+import org.alshar.common.*;
+
 import java.util.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
 import java.util.stream.IntStream;
 
 public class Graph {
@@ -30,6 +36,45 @@ public class Graph {
         this.buckets = new ArrayList<>(Collections.nCopies(DegreeBuckets.kNumberOfDegreeBuckets, new NodeID(0)));
         this.numberOfBuckets = 0;
     }
+    public Graph(StaticArray<EdgeID> nodes, StaticArray<NodeID> edges, StaticArray<NodeWeight> nodeWeights, StaticArray<EdgeWeight> edgeWeights) {
+        this.nodes = nodes;
+        this.edges = edges;
+        this.nodeWeights = nodeWeights;
+        this.edgeWeights = edgeWeights;
+    }
+    public Graph(Seq seq, StaticArray<EdgeID> nodes, StaticArray<NodeID> edges,
+                 StaticArray<NodeWeight> nodeWeights, StaticArray<EdgeWeight> edgeWeights,
+                 boolean sorted) {
+        this.nodes = nodes;
+        this.edges = edges;
+        this.nodeWeights = nodeWeights != null ? nodeWeights : new StaticArray<>(nodes.size() - 1);
+        this.edgeWeights = edgeWeights != null ? edgeWeights : new StaticArray<>(edges.size());
+        this.sorted = sorted;
+
+        if (this.nodeWeights.isEmpty()) {
+            this.totalNodeWeight = new NodeWeight(nodes.size() - 1);
+            this.maxNodeWeight = new NodeWeight(1);
+        } else {
+            this.totalNodeWeight = new NodeWeight(Arrays.stream(this.nodeWeights.getArray())
+                    .mapToLong(nw -> ((NodeWeight) nw).value)
+                    .sum());
+            this.maxNodeWeight = new NodeWeight(Arrays.stream(this.nodeWeights.getArray())
+                    .mapToLong(nw -> ((NodeWeight) nw).value)
+                    .max().orElse(1));
+        }
+
+        if (this.edgeWeights.isEmpty()) {
+            this.totalEdgeWeight = new EdgeWeight(edges.size());
+        } else {
+            this.totalEdgeWeight = new EdgeWeight(Arrays.stream(this.edgeWeights.getArray())
+                    .mapToLong(ew -> ((EdgeWeight) ew).value)
+                    .sum());
+        }
+
+        this.buckets = new ArrayList<>(Collections.nCopies(DegreeBuckets.kNumberOfDegreeBuckets, new NodeID(0)));
+        initDegreeBuckets();
+    }
+
 
     public Graph(StaticArray<EdgeID> nodes, StaticArray<NodeID> edges, StaticArray<NodeWeight> nodeWeights,
                  StaticArray<EdgeWeight> edgeWeights, boolean sorted) {
@@ -144,8 +189,21 @@ public class Graph {
     }
 
     public NodeID degree(NodeID u) {
-        return new NodeID(nodes.get((int) u.value + 1).value - nodes.get((int) u.value).value);
+        int index = (int) u.value;
+        if (index < 0 || index + 1 >= nodes.size()) {
+            throw new IndexOutOfBoundsException("Invalid node index: " + index);
+        }
+
+        Integer start = nodes.get(index).value;
+        Integer end = nodes.get(index + 1).value;
+
+        if (start == null || end == null) {
+            throw new NullPointerException("Node positions are not properly initialized.");
+        }
+
+        return new NodeID(end - start);
     }
+
 
     public EdgeID firstEdge(NodeID u) {
         return nodes.get((int) u.value);
@@ -156,8 +214,13 @@ public class Graph {
     }
 
     public void pforNodes(java.util.function.IntConsumer l) {
-        IntStream.range(0, (int) n().value).parallel().forEach(l);
+        ParallelFor.parallelFor(0, (int) n().value, 1, (start, end) -> {
+            for (int i = start; i < end; i++) {
+                l.accept(i);
+            }
+        });
     }
+
 
     public void pforEdges(java.util.function.IntConsumer l) {
         IntStream.range(0, (int) m().value).parallel().forEach(l);
@@ -263,7 +326,34 @@ public class Graph {
                     .max().orElse(1));
         }
     }
+    public Iterable<Edge> neighbors(NodeID u) {
+        EdgeID firstEdge = firstEdge(u);
+        EdgeID lastEdge = firstInvalidEdge(u);
 
+        return new Iterable<Edge>() {
+            @Override
+            public Iterator<Edge> iterator() {
+                return new Iterator<Edge>() {
+                    private EdgeID current = firstEdge;
+
+                    @Override
+                    public boolean hasNext() {
+                        return current.value < lastEdge.value;
+                    }
+
+                    @Override
+                    public Edge next() {
+                        if (!hasNext()) {
+                            throw new NoSuchElementException();
+                        }
+                        Edge edge = new Edge(current, edgeTarget(current));
+                        current = new EdgeID(current.value + 1);
+                        return edge;
+                    }
+                };
+            }
+        };
+    }
     public static class Debug {
         public static boolean validateGraph(Graph graph, boolean undirected, NodeID numPseudoNodes) {
             for (int u = 0; u < graph.n().value; u++) {
@@ -307,6 +397,7 @@ public class Graph {
             }
             return true;
         }
+
 
         public static void printGraph(Graph graph) {
             for (NodeID u : graph.nodes()) {
@@ -352,22 +443,5 @@ public class Graph {
             return sortedGraph;
         }
 
-        static class Pair<K, V> {
-            private K key;
-            private V value;
-
-            public Pair(K key, V value) {
-                this.key = key;
-                this.value = value;
-            }
-
-            public K getKey() {
-                return key;
-            }
-
-            public V getValue() {
-                return value;
-            }
-        }
     }
 }

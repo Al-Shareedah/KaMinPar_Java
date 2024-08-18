@@ -7,10 +7,14 @@ import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
 
-import org.alshar.common.StaticArray;
+import org.alshar.common.context.ContextWrapper;
+import org.alshar.common.datastructures.*;
+import org.alshar.common.enums.*;
+import org.alshar.kaminpar_shm.io.MetisReader;
+import org.alshar.kaminpar_shm.io.ShmIO;
 import org.alshar.kaminpar_shm.kaminpar;
-import org.alshar.kaminpar_shm.kaminpar.*;
-import static org.alshar.Presets.*;
+
+import static org.alshar.Presets.createDefaultContext;
 
 // Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
 // then press Enter. You can now see whitespace characters in your code.
@@ -23,7 +27,7 @@ public class KaMinPar {
         boolean showVersion = false;
 
         @Parameter(names = {"-s", "--seed"}, description = "Seed for random number generation.")
-        int seed = 0;
+        int seed = 0;  // Default value is set here
 
         @Parameter(names = {"-t", "--threads"}, description = "Number of threads to be used.")
         int numThreads = 1;
@@ -44,17 +48,52 @@ public class KaMinPar {
         boolean validate = false;
 
         @Parameter(names = {"-G", "--graph"}, description = "Input graph in METIS format.", required = true)
-        String graphFilename = "";
+        String graphFilename = "PGPgiantcompo.graph";
 
         @Parameter(names = {"-o", "--output"}, description = "Output filename for the graph partition.")
         String partitionFilename = "";
     }
-    public static void main(String[] args) {
-        ApplicationContext app = new ApplicationContext();
-        Context ctx = Presets.createDefaultContext();
-        JCommander commander = JCommander.newBuilder().addObject(app).build();
 
-        setupContext(commander, app, ctx);
+    public static class PresetCommand {
+        @Parameter(names = {"-P", "--preset"}, description = "Use configuration preset.", required = true)
+        String preset;
+
+        @Parameter(names = {"--rearrange-by"}, description = "Criteria by which the graph is sorted and rearranged.")
+        String rearrangeBy = "natural";
+
+        @Parameter(names = {"--c-contraction-limit"}, description = "Upper limit for the number of nodes per block in the coarsest graph.")
+        int contractionLimit = 1068;
+
+        private final ContextWrapper contextWrapper;
+
+        public PresetCommand(ContextWrapper contextWrapper) {
+            this.contextWrapper = contextWrapper;
+        }
+
+        public void setPreset(String preset) {
+            contextWrapper.ctx = Presets.createContextByPresetName(preset);
+        }
+    }
+
+    public static void main(String[] args) {
+        // Main application arguments
+        String[] defaultArgs = {
+                "-G", "PGPgiantcompo.graph",
+                "-k", "4",
+                "-t", "1",
+                "preset", "-P", "default"
+        };
+
+        args = defaultArgs;
+        ApplicationContext app = new ApplicationContext();
+        Context ctx = createDefaultContext();
+        ContextWrapper contextWrapper = new ContextWrapper(ctx);
+        PresetCommand presetCmd = new PresetCommand(contextWrapper);
+
+        JCommander commander = JCommander.newBuilder()
+                .addObject(app)  // Register the main parameters
+                .addCommand("preset", presetCmd)  // Register the command
+                .build();
 
         try {
             commander.parse(args);
@@ -74,18 +113,19 @@ public class KaMinPar {
             System.exit(0);
         }
 
-        // Allocate graph data structures and read graph file
-        StaticArray<EdgeID> xadj = new StaticArray<>(0); // Initialize with size 0
+        // Allocate and read graph data
+        StaticArray<EdgeID> xadj = new StaticArray<>(0);
         StaticArray<NodeID> adjncy = new StaticArray<>(0);
         StaticArray<NodeWeight> vwgt = new StaticArray<>(0);
         StaticArray<EdgeWeight> adjwgt = new StaticArray<>(0);
 
         try {
             if (app.validate) {
-                ShmIO.Metis.read(app.graphFilename, xadj, adjncy, vwgt, adjwgt, true);
+                MetisReader.read(app.graphFilename, xadj, adjncy, vwgt, adjwgt, false);
                 GraphValidator.validateUndirectedGraph(xadj, adjncy, vwgt, adjwgt);
             } else {
-                ShmIO.Metis.read(app.graphFilename, xadj, adjncy, vwgt, adjwgt, false);
+                MetisReader.read(app.graphFilename, xadj, adjncy, vwgt, adjwgt, false);
+
             }
         } catch (IOException e) {
             System.err.println("Error reading graph file: " + e.getMessage());
@@ -95,11 +135,11 @@ public class KaMinPar {
         int n = xadj.size() - 1;
         BlockID[] partition = new BlockID[n];
         for (int i = 0; i < n; i++) {
-            partition[i] = new BlockID(0); // Initialize with default values
+            partition[i] = new BlockID(0);
         }
 
-        // Compute graph partition
-        kaminpar.KaMinPar partitioner = new kaminpar.KaMinPar(app.numThreads, ctx);
+        // Set up the partitioner and perform partitioning
+        kaminpar.KaMinPar partitioner = new kaminpar.KaMinPar(app.numThreads, contextWrapper.ctx);
         partitioner.reseed(app.seed);
 
         if (app.quiet) {
@@ -113,29 +153,29 @@ public class KaMinPar {
 
         partitioner.computePartition(new BlockID(app.k), partition);
 
-        // Save graph partition
+        // Convert BlockID[] to List<Integer>
+        List<Integer> partitionList = convertBlockIDArrayToList(partition);
+
+        // Save the graph partition if an output file is specified
         if (!app.partitionFilename.isEmpty()) {
             try {
-                GraphIO.writePartition(app.partitionFilename, partition);
+                ShmIO.writePartition(app.partitionFilename, partitionList);
             } catch (IOException e) {
                 System.err.println("Error writing partition file: " + e.getMessage());
             }
         }
     }
-    public static void setupContext(JCommander commander, ApplicationContext app, Context ctx) {
-        commander.addCommand("config", new Object() {
-            @Parameter(names = {"-C", "--config"}, description = "Read parameters from a TOML configuration file.")
-            String config = "";
-        });
 
-        commander.addCommand("preset", new Object() {
-            @Parameter(names = {"-P", "--preset"}, description = "Use configuration preset.")
-            String preset;
-
-            public void setPreset(String preset) {
-            }
-        });
-
-        KaminparArguments.createAllOptions(commander, ctx);
+    public static List<Integer> convertBlockIDArrayToList(BlockID[] partition) {
+        List<Integer> partitionList = new ArrayList<>(partition.length);
+        for (BlockID blockID : partition) {
+            partitionList.add(blockID.value); // Assuming BlockID has a field 'value' of type int
+        }
+        return partitionList;
     }
+
+    public static void setupContext(JCommander commander, ContextWrapper contextWrapper) {
+        KaminparArguments.createAllOptions(commander, contextWrapper.ctx);
+    }
+
 }

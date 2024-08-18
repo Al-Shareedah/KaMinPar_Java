@@ -2,12 +2,14 @@ package org.alshar.kaminpar_shm;
 
 import org.alshar.Context;
 import org.alshar.Graph;
+import org.alshar.common.GraphUtils.Permutator;
 import org.alshar.common.Logger;
-import org.alshar.common.StaticArray;
-import org.alshar.common.Random_shm;
+import org.alshar.common.datastructures.*;
+import org.alshar.common.Math.Random_shm;
 import org.alshar.common.cio;
+import org.alshar.common.enums.*;
+import org.alshar.common.timer.*;
 
-import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
@@ -19,6 +21,7 @@ public class kaminpar {
     public static final NodeWeight kInvalidNodeWeight = new NodeWeight(Integer.MAX_VALUE);
     public static final EdgeWeight kInvalidEdgeWeight = new EdgeWeight(Integer.MAX_VALUE);
     public static final BlockWeight kInvalidBlockWeight = new BlockWeight(Integer.MAX_VALUE);
+    public static final BlockID kInvalidBlockID = new BlockID(Integer.MAX_VALUE);
     public static class KaMinPar {
         private int numThreads;
         private int maxTimerDepth = Integer.MAX_VALUE;
@@ -61,8 +64,26 @@ public class kaminpar {
             EdgeID m = new EdgeID(xadj.get(n).value);
             StaticArray<EdgeID> nodes = new StaticArray<>(xadj);
             StaticArray<NodeID> edges = new StaticArray<>(adjncy);
-            StaticArray<NodeWeight> nodeWeights = (vwgt.size() == 0) ? new StaticArray<>(0) : new StaticArray<>(vwgt);
-            StaticArray<EdgeWeight> edgeWeights = (adjwgt.size() == 0) ? new StaticArray<>(0) : new StaticArray<>(adjwgt);
+            // Initialize nodeWeights and edgeWeights based on the condition
+            StaticArray<NodeWeight> nodeWeights;
+            if (vwgt.size() == 0) {
+                nodeWeights = new StaticArray<>(xadj.size());
+                for (int i = 0; i < nodeWeights.size(); i++) {
+                    nodeWeights.set(i, new NodeWeight(1)); // Initialize with value 1
+                }
+            } else {
+                nodeWeights = new StaticArray<>(vwgt);
+            }
+
+            StaticArray<EdgeWeight> edgeWeights;
+            if (adjwgt.size() == 0) {
+                edgeWeights = new StaticArray<>(adjncy.size());
+                for (int i = 0; i < edgeWeights.size(); i++) {
+                    edgeWeights.set(i, new EdgeWeight(1)); // Initialize with value 1
+                }
+            } else {
+                edgeWeights = new StaticArray<>(adjwgt);
+            }
 
             graph = new Graph(nodes, edges, nodeWeights, edgeWeights, false);
         }
@@ -120,7 +141,7 @@ public class kaminpar {
 
             double originalEpsilon = ctx.partition.epsilon;
             ctx.parallel.numThreads = numThreads;
-            ctx.partition.k = k.value;
+            ctx.partition.k = k;
 
             // Setup graph dependent context parameters
             ctx.setup(graph);
@@ -130,29 +151,28 @@ public class kaminpar {
                 cio.print(ctx, System.out);
             }
 
-            Timer.start("Partitioning");
-            if (ctx.rearrangeBy == GraphOrdering.DEGREE_BUCKETS && !wasRearranged) {
-                graph = GraphUtils.rearrangeByDegreeBuckets(ctx, graph);
-                wasRearranged = true;
-            }
+            Timer_km.global().startTimer("Partitioning");
 
             // Perform actual partitioning
-            PartitionedGraph pGraph = Factory.createPartitioner(graph, ctx).partition();
+            Partitioner partitioner = Factory.createPartitioner(graph, ctx)
+                    .orElseThrow(() -> new IllegalStateException("Partitioner could not be created"));
+            final PartitionedGraphWrapper pGraphWrapper = new PartitionedGraphWrapper();
+            pGraphWrapper.pGraph = partitioner.partition();
 
             // Re-integrate isolated nodes that were cut off during preprocessing
             if (graph.permuted()) {
-                NodeID numIsolatedNodes = GraphUtils.integrateIsolatedNodes(graph, originalEpsilon, ctx);
-                pGraph = GraphUtils.assignIsolatedNodes(pGraph, numIsolatedNodes, ctx.partition);
+                NodeID numIsolatedNodes = Permutator.integrateIsolatedNodes(graph, originalEpsilon, ctx);
+                pGraphWrapper.pGraph = Permutator.assignIsolatedNodes(pGraphWrapper.pGraph, numIsolatedNodes, ctx.partition);
             }
-            Timer.stop();
+            Timer_km.global().stopTimer();
 
-            Timer.start("IO");
+            Timer_km.global().startTimer("IO");
             if (graph.permuted()) {
                 ForkJoinPool.commonPool().invoke(new RecursiveAction() {
                     @Override
                     protected void compute() {
-                        for (long u = 0; u < pGraph.n(); u++) {
-                            partition[(int) u] = pGraph.block(graph.mapOriginalNode(new NodeID(u)));
+                        for (long u = 0; u < pGraphWrapper.pGraph.n().value; u++) {
+                            partition[(int) u] = pGraphWrapper.pGraph.block(graph.mapOriginalNode(new NodeID((int) u)));
                         }
                     }
                 });
@@ -160,21 +180,20 @@ public class kaminpar {
                 ForkJoinPool.commonPool().invoke(new RecursiveAction() {
                     @Override
                     protected void compute() {
-                        for (long u = 0; u < pGraph.n(); u++) {
-                            partition[(int) u] = pGraph.block(new NodeID(u));
+                        for (long u = 0; u < pGraphWrapper.pGraph.n().value; u++) {
+                            partition[(int) u] = pGraphWrapper.pGraph.block(new NodeID((int)u));
                         }
                     }
                 });
             }
-            Timer.stop();
+            Timer_km.global().stopTimer();
 
-            // Print some statistics
-            Timer.stop(); // stop root timer
+            Timer_km.global().stopTimer();
             if (outputLevel.compareTo(OutputLevel.APPLICATION) >= 0) {
-                printStatistics(ctx, pGraph, maxTimerDepth, outputLevel == OutputLevel.EXPERIMENT);
+                printStatistics(ctx, pGraphWrapper.pGraph, maxTimerDepth, outputLevel == OutputLevel.EXPERIMENT);
             }
 
-            EdgeWeight finalCut = Metrics.edgeCut(pGraph);
+            EdgeWeight finalCut = Metrics.edgeCut(pGraphWrapper.pGraph);
 
             resetGlobalTimer();
 
@@ -191,22 +210,22 @@ public class kaminpar {
             // Statistics output that is easy to parse
             if (parseable) {
                 Logger.log("RESULT cut=" + cut.value + " imbalance=" + imbalance + " feasible=" + feasible + " k=" + pGraph.k());
-                if (Timers.isEnabled()) {
+                if (Timer_km.global().isEnabled()) {
                     Logger.log("TIME ");
-                    Timers.printMachineReadable(System.out);
+                    Timer_km.global().printMachineReadable(System.out, maxTimerDepth);
                 } else {
                     Logger.log("TIME disabled");
                 }
             }
 
-            if (Timers.isEnabled()) {
-                Timers.printHumanReadable(System.out, maxTimerDepth);
+            if (Timer_km.global().isEnabled()) {
+                Timer_km.global().printHumanReadable(System.out, maxTimerDepth);
             } else {
                 Logger.log("Global Timers: disabled");
             }
-            Logger.log();
+            Logger.log("");
             Logger.log("Partition summary:");
-            if (pGraph.k() != ctx.partition.k.value) {
+            if (pGraph.k() != ctx.partition.k) {
                 Logger.log(Logger.RED + "  Number of blocks: " + pGraph.k());
             } else {
                 Logger.log("  Number of blocks: " + pGraph.k());
@@ -221,299 +240,15 @@ public class kaminpar {
         }
 
         private void resetGlobalTimer() {
-            // Logic to reset the global timer if timers are enabled
-            if (Timers.isEnabled()) {
-                Timers.reset();
+            if (Timer_km.global().isEnabled()) {
+                Timer_km.global().reset();
             }
         }
     }
 
-    public static class NodeID {
-        public int value;
 
-        public NodeID(int value) {
-            this.value = value;
-        }
-    }
 
-    public static class EdgeID {
-        public int value;
 
-        public EdgeID(int value) {
-            this.value = value;
-        }
-    }
 
-    public static class NodeWeight {
-        public long value;
-
-        public NodeWeight(long value) {
-            this.value = value;
-        }
-    }
-
-    public static class EdgeWeight {
-        public long value;
-
-        public EdgeWeight(long value) {
-            this.value = value;
-        }
-    }
-
-    public static class BlockID {
-        public int value;
-
-        public BlockID(int value) {
-            this.value = value;
-        }
-    }
-
-    public static class BlockWeight {
-        public long value;
-
-        public BlockWeight(long value) {
-            this.value = value;
-        }
-    }
-
-    public enum OutputLevel {
-        QUIET,
-        PROGRESS,
-        APPLICATION,
-        EXPERIMENT
-    }
-
-    public enum GraphOrdering {
-        NATURAL,
-        DEGREE_BUCKETS
-    }
-
-    public enum ClusteringAlgorithm {
-        NOOP,
-        LABEL_PROPAGATION
-    }
-
-    public enum ClusterWeightLimit {
-        EPSILON_BLOCK_WEIGHT,
-        BLOCK_WEIGHT,
-        ONE,
-        ZERO
-    }
-
-    public enum TwoHopStrategy {
-        DISABLE,
-        MATCH,
-        MATCH_THREADWISE,
-        CLUSTER,
-        CLUSTER_THREADWISE,
-        LEGACY
-    }
-
-    public enum IsolatedNodesClusteringStrategy {
-        KEEP,
-        MATCH,
-        CLUSTER,
-        MATCH_DURING_TWO_HOP,
-        CLUSTER_DURING_TWO_HOP
-    }
-
-    public enum RefinementAlgorithm {
-        LABEL_PROPAGATION,
-        KWAY_FM,
-        GREEDY_BALANCER,
-        JET,
-        MTKAHYPAR,
-        NOOP
-    }
-
-    public enum FMStoppingRule {
-        SIMPLE,
-        ADAPTIVE
-    }
-
-    public enum GainCacheStrategy {
-        SPARSE,
-        DENSE,
-        ON_THE_FLY,
-        HYBRID,
-        TRACING
-    }
-
-    public enum InitialPartitioningMode {
-        SEQUENTIAL,
-        ASYNCHRONOUS_PARALLEL,
-        SYNCHRONOUS_PARALLEL
-    }
-
-    public enum PartitioningMode {
-        DEEP,
-        RB,
-        KWAY
-    }
-
-    public static class LabelPropagationCoarseningContext {
-        int numIterations;
-        int largeDegreeThreshold;
-        int maxNumNeighbors;
-        TwoHopStrategy twoHopStrategy;
-        double twoHopThreshold;
-        IsolatedNodesClusteringStrategy isolatedNodesStrategy;
-    }
-
-    public static class CoarseningContext {
-        ClusteringAlgorithm algorithm;
-        LabelPropagationCoarseningContext lp;
-        int contractionLimit;
-        boolean enforceContractionLimit;
-        double convergenceThreshold;
-        ClusterWeightLimit clusterWeightLimit;
-        double clusterWeightMultiplier;
-
-        public boolean coarseningShouldConverge(int oldN, int newN) {
-            return (1.0 - 1.0 * newN / oldN) <= convergenceThreshold;
-        }
-    }
-
-    public static class LabelPropagationRefinementContext {
-        long numIterations;
-        int largeDegreeThreshold;
-        int maxNumNeighbors;
-    }
-
-    public static class KwayFMRefinementContext {
-        int numSeedNodes;
-        double alpha;
-        int numIterations;
-        boolean unlockLocallyMovedNodes;
-        boolean unlockSeedNodes;
-        boolean useExactAbortionThreshold;
-        double abortionThreshold;
-        GainCacheStrategy gainCacheStrategy;
-        long constantHighDegreeThreshold;
-        double kBasedHighDegreeThreshold;
-        boolean dbgComputeBatchStats;
-    }
-
-    public static class JetRefinementContext {
-        int numIterations;
-        int numFruitlessIterations;
-        double fruitlessThreshold;
-        double fineNegativeGainFactor;
-        double coarseNegativeGainFactor;
-        RefinementAlgorithm balancingAlgorithm;
-    }
-
-    public static class MtKaHyParRefinementContext {
-        String configFilename;
-        String coarseConfigFilename;
-        String fineConfigFilename;
-    }
-
-    public static class InitialCoarseningContext {
-        int contractionLimit;
-        double convergenceThreshold;
-        int largeDegreeThreshold;
-        ClusterWeightLimit clusterWeightLimit;
-        double clusterWeightMultiplier;
-    }
-
-    public static class InitialRefinementContext {
-        boolean disabled;
-        FMStoppingRule stoppingRule;
-        int numFruitlessMoves;
-        double alpha;
-        long numIterations;
-        double improvementAbortionThreshold;
-    }
-
-    public static class InitialPartitioningContext {
-        InitialCoarseningContext coarsening;
-        InitialRefinementContext refinement;
-        double repetitionMultiplier;
-        long minNumRepetitions;
-        long minNumNonAdaptiveRepetitions;
-        long maxNumRepetitions;
-        long numSeedIterations;
-        boolean useAdaptiveBipartitionerSelection;
-    }
-
-    public static class BlockWeightsContext {
-        private List<BlockWeight> perfectlyBalancedBlockWeights;
-        private List<BlockWeight> maxBlockWeights;
-
-        public void setup(Context.PartitionContext pCtx) {
-            if (pCtx.k == 0) {
-                throw new IllegalStateException("PartitionContext::k not initialized");
-            }
-            if (pCtx.totalNodeWeight == kaminpar.kInvalidNodeWeight) {
-                throw new IllegalStateException("PartitionContext::total_node_weight not initialized");
-            }
-            if (pCtx.maxNodeWeight == kaminpar.kInvalidNodeWeight) {
-                throw new IllegalStateException("PartitionContext::max_node_weight not initialized");
-            }
-
-            long perfectlyBalancedBlockWeight = (long) Math.ceil(1.0 * pCtx.totalNodeWeight.value / pCtx.k);
-            long maxBlockWeight = (long) ((1.0 + pCtx.epsilon) * perfectlyBalancedBlockWeight);
-
-            maxBlockWeights = new ArrayList<>(Collections.nCopies(pCtx.k, new BlockWeight(0)));
-            perfectlyBalancedBlockWeights = new ArrayList<>(Collections.nCopies(pCtx.k, new BlockWeight(0)));
-
-            ForkJoinPool.commonPool().invoke(new RecursiveAction() {
-                @Override
-                protected void compute() {
-                    for (int b = 0; b < pCtx.k; b++) {
-                        perfectlyBalancedBlockWeights.set(b, new BlockWeight(perfectlyBalancedBlockWeight));
-                        if (pCtx.maxNodeWeight.value == 1) {
-                            maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
-                        } else {
-                            maxBlockWeights.set(b, new BlockWeight(Math.max(maxBlockWeight, perfectlyBalancedBlockWeight + pCtx.maxNodeWeight.value)));
-                        }
-                    }
-                }
-            });
-        }
-
-        public void setup(Context.PartitionContext pCtx, int inputK) {
-            if (pCtx.k == 0) {
-                throw new IllegalStateException("PartitionContext::k not initialized");
-            }
-            if (pCtx.totalNodeWeight == kaminpar.kInvalidNodeWeight) {
-                throw new IllegalStateException("PartitionContext::total_node_weight not initialized");
-            }
-            if (pCtx.maxNodeWeight == kaminpar.kInvalidNodeWeight) {
-                throw new IllegalStateException("PartitionContext::max_node_weight not initialized");
-            }
-
-            double blockWeight = 1.0 * pCtx.totalNodeWeight.value / inputK;
-
-            maxBlockWeights = new ArrayList<>(Collections.nCopies(pCtx.k, new BlockWeight(0)));
-            perfectlyBalancedBlockWeights = new ArrayList<>(Collections.nCopies(pCtx.k, new BlockWeight(0)));
-
-            ForkJoinPool.commonPool().invoke(new RecursiveAction() {
-                @Override
-                protected void compute() {
-                    for (int b = 0; b < pCtx.k; b++) {
-                        int finalK = PartitionUtils.computeFinalK(b, pCtx.k, inputK);
-                        perfectlyBalancedBlockWeights.set(b, new BlockWeight((long) Math.ceil(finalK * blockWeight)));
-                        long maxBlockWeight = (long) ((1.0 + pCtx.epsilon) * perfectlyBalancedBlockWeights.get(b).value);
-                        if (pCtx.maxNodeWeight.value == 1) {
-                            maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
-                        } else {
-                            maxBlockWeights.set(b, new BlockWeight(Math.max(maxBlockWeight, perfectlyBalancedBlockWeights.get(b).value + pCtx.maxNodeWeight.value)));
-                        }
-                    }
-                }
-            });
-        }
-
-        public List<BlockWeight> allMax() {
-            return maxBlockWeights;
-        }
-
-        public List<BlockWeight> allPerfectlyBalanced() {
-            return perfectlyBalancedBlockWeights;
-        }
-
-    }
 }
 

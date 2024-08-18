@@ -1,4 +1,4 @@
-package org.alshar.common;
+package org.alshar.common.Math;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,6 +19,7 @@ public class Random_shm {
         this.nextRandomBool = 0;
         precomputeBools();
     }
+
 
     public static Random_shm getInstance() {
         return createInstance();
@@ -80,10 +81,25 @@ public class Random_shm {
             this.rand = rand;
             initPermutations(initialElements, count);
         }
+        public RandomPermutations(Random_shm rand, int size, int count) {
+            this.rand = rand;
+            initPermutations(size, count);
+        }
+
 
         private void initPermutations(List<ValueType> initialElements, int count) {
             for (int i = 0; i < count; i++) {
                 List<ValueType> permutation = new ArrayList<>(initialElements);
+                rand.shuffle(permutation);
+                permutations.add(permutation);
+            }
+        }
+        private void initPermutations(int size, int count) {
+            for (int i = 0; i < count; i++) {
+                List<ValueType> permutation = new ArrayList<>(size);
+                for (int j = 0; j < size; j++) {
+                    permutation.add((ValueType) Integer.valueOf(j));  // Cast to ValueType
+                }
                 rand.shuffle(permutation);
                 permutations.add(permutation);
             }
