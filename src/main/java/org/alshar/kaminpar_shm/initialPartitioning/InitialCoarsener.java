@@ -93,13 +93,51 @@ public class InitialCoarsener {
         this.edgeWeightCollector = mCtx.edgeWeightCollector;
         this.clusterNodes = mCtx.clusterNodes;
 
+        int nodeCount = inputGraph.n().value;
+
         // Ensure clustering is appropriately sized
-        if (clustering.size() < inputGraph.n().value + 1) {
-            for (int i = clustering.size(); i <= inputGraph.n().value; i++) {
+        if (clustering.size() < nodeCount) {
+            // Initialize a new list with the correct size
+            clustering = new ArrayList<>(nodeCount);
+
+            // Populate the list with new Cluster instances
+            for (int i = 0; i < nodeCount; i++) {
                 clustering.add(new Cluster());
             }
         }
+
+        // Ensure ratingMap is appropriately sized
+        if (ratingMap.size() < nodeCount) {
+            ratingMap.resize(nodeCount); // Resize and initialize with 0
+        }
+
+        // Ensure clusterSizes is appropriately sized
+        if (clusterSizes.size() < nodeCount) {
+            for (int i = clusterSizes.size(); i < nodeCount; i++) {
+                clusterSizes.add(new NodeID(0));
+            }
+        }
+
+        // Ensure leaderNodeMapping is appropriately sized
+        if (leaderNodeMapping.size() < nodeCount) {
+            for (int i = leaderNodeMapping.size(); i < nodeCount; i++) {
+                leaderNodeMapping.add(new NodeID(0));
+            }
+        }
+
+        // Ensure edgeWeightCollector is appropriately sized
+        if (edgeWeightCollector.size() < nodeCount) {
+            edgeWeightCollector.resize(nodeCount); // Resize and initialize with 0
+        }
+
+        // Ensure clusterNodes is appropriately sized
+        if (clusterNodes.size() < nodeCount) {
+            for (int i = clusterNodes.size(); i < nodeCount; i++) {
+                clusterNodes.add(new NodeID(0));
+            }
+        }
     }
+
 
 
     public InitialCoarsener(Graph graph, InitialCoarseningContext cCtx) {

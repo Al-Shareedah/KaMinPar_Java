@@ -1,10 +1,12 @@
 package org.alshar.common.GraphUtils;
 import org.alshar.Graph;
+import org.alshar.common.Seq;
 import org.alshar.common.datastructures.*;
 import org.alshar.kaminpar_shm.PartitionedGraph;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
@@ -178,7 +180,7 @@ public class SubgraphExtractor {
         AtomicIntegerArray mapping = new AtomicIntegerArray(n);
         List<SubgraphMemoryStartPosition> startPositions = new ArrayList<>(pGraph.k().value + 1);
         AtomicIntegerArray bucketIndex = new AtomicIntegerArray(pGraph.k().value);
-        List<Graph> subgraphs = new ArrayList<>(pGraph.k().value);
+        List<Graph> subgraphs = new ArrayList<>(Collections.nCopies(pGraph.k().value, null));
 
         // Initialize positions
         for (int i = 0; i < pGraph.k().value + 1; i++) {
@@ -204,10 +206,17 @@ public class SubgraphExtractor {
             }
         });
 
-        // Merge block sizes
+        // Merge block sizes and compute final K
         for (int b = 0; b < pGraph.k().value; b++) {
-            startPositions.get(b + 1).nodesStartPos = numNodesInBlock.get(b);
+            int padding = computeFinalK(b, pGraph.k().value, inputK.value); // Correctly compute padding
+            startPositions.get(b + 1).nodesStartPos = numNodesInBlock.get(b) + padding;
             startPositions.get(b + 1).edgesStartPos = numEdgesInBlock.get(b);
+        }
+
+        // Apply prefix sum to start positions
+        for (int b = 1; b <= pGraph.k().value; b++) {
+            startPositions.get(b).nodesStartPos += startPositions.get(b - 1).nodesStartPos;
+            startPositions.get(b).edgesStartPos += startPositions.get(b - 1).edgesStartPos;
         }
 
         // Build temporary bucket array in nodes array
@@ -224,7 +233,7 @@ public class SubgraphExtractor {
             }
         });
 
-        boolean isNodeWeighted = graph.nodeWeighted();
+        boolean isNodeWeighted = /* graph.nodeWeighted() */ false;
         boolean isEdgeWeighted = graph.edgeWeighted();
 
         // Build subgraph
@@ -267,15 +276,15 @@ public class SubgraphExtractor {
                     long n0 = startPositions.get(b).nodesStartPos;
                     long m0 = startPositions.get(b).edgesStartPos;
 
-                    long n = startPositions.get(b + 1).nodesStartPos - n0 - computeFinalK(b, pGraph.k().value, inputK.value);
-                    long m = startPositions.get(b + 1).edgesStartPos - m0;
+                    long n = Math.abs(startPositions.get(b + 1).nodesStartPos - n0 - computeFinalK(b, pGraph.k().value, inputK.value));
+                    long m = Math.abs(startPositions.get(b + 1).edgesStartPos - m0);
 
                     StaticArray<EdgeID> sNodes = new StaticArray<>((int) n0, (int) (n + 1), subgraphMemory.getNodes().getArray());
                     StaticArray<NodeID> sEdges = new StaticArray<>((int) m0, (int) m, subgraphMemory.getEdges().getArray());
                     StaticArray<NodeWeight> sNodeWeights = new StaticArray<>(isNodeWeighted ? (int) n0 : 0, isNodeWeighted ? (int) n : 0, subgraphMemory.getNodeWeights().getArray());
                     StaticArray<EdgeWeight> sEdgeWeights = new StaticArray<>(isEdgeWeighted ? (int) m0 : 0, isEdgeWeighted ? (int) m : 0, subgraphMemory.getEdgeWeights().getArray());
 
-                    subgraphs.add(b, new Graph(sNodes, sEdges, sNodeWeights, sEdgeWeights));
+                    subgraphs.set(b, new Graph(new Seq(),sNodes, sEdges, sNodeWeights, sEdgeWeights, false));
                 });
             }
         });

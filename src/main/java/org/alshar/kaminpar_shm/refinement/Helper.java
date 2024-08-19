@@ -45,8 +45,7 @@ public class Helper {
     }
 
     public static PartitionedGraph bipartition(Graph graph, BlockID finalK, Context inputCtx, GlobalInitialPartitionerMemoryPool  ipMCtxPool) {
-        Context inputCtx_copy =inputCtx;
-        InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx_copy, finalK, ipMCtxPool.local().get());
+        InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx, finalK, ipMCtxPool.local().get());
         PartitionedGraph pGraph = partitioner.partition();
         ipMCtxPool.local().put(partitioner.free());
         return pGraph;
