@@ -62,14 +62,22 @@ public class Helper {
             SubgraphMemory subgraphMemory,
             SubgraphMemoryStartPosition position,
             TemporaryGraphExtractionBufferPool extractionPool,
-            GlobalInitialPartitionerMemoryPool  ipMCtxPool) {
+            GlobalInitialPartitionerMemoryPool ipMCtxPool) {
 
+        // Ensure that the number of blocks (k) is greater than 1
+        if (k.value <= 1) {
+            throw new IllegalArgumentException("Block count k must be greater than 1.");
+        }
+
+        // Perform the initial bipartition of the graph
         PartitionedGraph pGraph = bipartition(graph, finalK, inputCtx, ipMCtxPool);
 
+        // Split k and finalK into two parts
         BlockID[] finalKs = splitIntegral(finalK);
         BlockID[] ks = splitIntegral(k);
         BlockID[] b = new BlockID[]{b0, b0.add(ks[0])};
 
+        // Update the partition to reflect the bipartition
         for (int i = 0; i < partition.size(); i++) {
             BlockID block = partition.get(i);
             if (block.equals(b0)) {
@@ -77,12 +85,35 @@ public class Helper {
             }
         }
 
+        // Check if further recursion is needed
         if (k.value > 2) {
-            int[] finalKsInts = convertBlockIDArrayToIntArray(finalKs);
-            SequentialSubgraphExtractionResult extraction = extractSubgraphsSequential(pGraph, finalKsInts, position, subgraphMemory, extractionPool.local());
+            // Extract subgraphs from the partitioned graph
+            SequentialSubgraphExtractionResult extraction = extractSubgraphsSequential(
+                    pGraph,
+                    convertBlockIDArrayToIntArray(finalKs),
+                    position,
+                    subgraphMemory,
+                    extractionPool.local()
+            );
+
+            List<Graph> subgraphs = extraction.subgraphs;
+            List<SubgraphMemoryStartPosition> positions = extraction.positions;
+
+            // Recursively extend the partitions for each subgraph
             for (int i = 0; i < 2; i++) {
                 if (ks[i].value > 1) {
-                    extendPartitionRecursive(extraction.subgraphs.get(i), partition, b[i], ks[i], finalKs[i], inputCtx, subgraphMemory, extraction.positions.get(i), extractionPool, ipMCtxPool);
+                    extendPartitionRecursive(
+                            subgraphs.get(i),
+                            partition,
+                            b[i],
+                            ks[i],
+                            finalKs[i],
+                            inputCtx,
+                            subgraphMemory,
+                            positions.get(i),
+                            extractionPool,
+                            ipMCtxPool
+                    );
                 }
             }
         }
@@ -118,15 +149,15 @@ public class Helper {
         final SubgraphMemory finalSubgraphMemory = subgraphMemory;
         final Context finalInputCtx = inputCtx;
         final SubgraphExtractionResult finalExtraction = extraction;
-
+        int currentK = pGraph.k().value;
         // Parallel bipartitioning of subgraphs
         ForkJoinPool.commonPool().invoke(new RecursiveAction() {
             @Override
             protected void compute() {
                 for (BlockID b = new BlockID(0); b.value < finalExtraction.subgraphs.size(); b = b.add(1)) {
                     Graph subgraph = finalExtraction.subgraphs.get(b.value);
-                    BlockID finalKb = new BlockID(computeFinalK(b.value, pGraph.k().value, finalInputCtx.partition.k.value));
-                    BlockID subgraphK = (kPrime.equals(finalInputCtx.partition.k)) ? finalKb : new BlockID(kPrime.value / pGraph.k().value);
+                    BlockID finalKb = new BlockID(computeFinalK(b.value, currentK, finalInputCtx.partition.k.value));
+                    BlockID subgraphK = (kPrime.equals(finalInputCtx.partition.k)) ? finalKb : new BlockID(kPrime.value / currentK);
 
                     if (subgraphK.value > 1) {
                         extendPartitionRecursive(

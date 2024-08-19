@@ -47,7 +47,32 @@ public class SubgraphMemory {
         edges = new StaticArray<>(m.value);
         nodeWeights = new StaticArray<>(isNodeWeighted ? n.value + k.value : 0);
         edgeWeights = new StaticArray<>(isEdgeWeighted ? m.value : 0);
+
+        // Initialize all elements in nodes array to 0
+        for (int i = 0; i < nodes.size(); i++) {
+            nodes.set(i, new EdgeID(0));
+        }
+
+        // Initialize all elements in edges array to 0
+        for (int i = 0; i < edges.size(); i++) {
+            edges.set(i, new NodeID(0));
+        }
+
+        // Initialize all elements in nodeWeights array to 0 if it's being used
+        if (isNodeWeighted) {
+            for (int i = 0; i < nodeWeights.size(); i++) {
+                nodeWeights.set(i, new NodeWeight(0));
+            }
+        }
+
+        // Initialize all elements in edgeWeights array to 0 if it's being used
+        if (isEdgeWeighted) {
+            for (int i = 0; i < edgeWeights.size(); i++) {
+                edgeWeights.set(i, new EdgeWeight(0));
+            }
+        }
     }
+
 
     public boolean isEmpty() {
         return nodes.isEmpty();
