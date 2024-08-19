@@ -548,39 +548,39 @@ public class LPClustering extends Clusterer {
             return state.currentClusterWeight + state.uWeight.value <= maxClusterWeight() && state.currentGain > state.bestGain;
         }
     }
-    private static class Chunk {
-        int start;
-        int end;
+    public static class Chunk {
+        public int start;
+        public int end;
 
-        Chunk(int start, int end) {
+        public Chunk(int start, int end) {
             this.start = start;
             this.end = end;
         }
     }
 
-    private static class Bucket {
-        int start;
-        int end;
+    public static class Bucket {
+        public int start;
+        public int end;
 
-        Bucket(int start, int end) {
+        public Bucket(int start, int end) {
             this.start = start;
             this.end = end;
         }
     }
-    private static class ClusterSelectionState {
+    public static class ClusterSelectionState {
         Random_shm localRand;
         int u;
-        NodeWeight uWeight;
-        int initialCluster;
+        public NodeWeight uWeight;
+        public int initialCluster;
         long initialClusterWeight;
-        int bestCluster;
-        long bestGain;
-        long bestClusterWeight;
-        int currentCluster;
-        long currentGain;
-        long currentClusterWeight;
+        public int bestCluster;
+        public long bestGain;
+        public long bestClusterWeight;
+        public int currentCluster;
+        public long currentGain;
+        public long currentClusterWeight;
 
-        ClusterSelectionState(Random_shm localRand, int u, NodeWeight uWeight, int initialCluster, long initialClusterWeight) {
+        public ClusterSelectionState(Random_shm localRand, int u, NodeWeight uWeight, int initialCluster, long initialClusterWeight) {
             this.localRand = localRand;
             this.u = u;
             this.uWeight = uWeight;

@@ -64,7 +64,18 @@ public class LocalRatingMap {
     public long get(MapType mapType, int key) {
         switch (mapType) {
             case SUPER_SMALL:
-                return superSmallMap.exists(key) ? superSmallMap.get(key) : 0L;
+                if (superSmallMap.exists(key)) {
+                    Object value = superSmallMap.get(key);
+                    if (value instanceof Long) {
+                        return (Long) value;
+                    } else if (value instanceof EdgeWeight) {
+                        return ((EdgeWeight) value).value; // Extract the long value from EdgeWeight
+                    } else {
+                        throw new IllegalStateException("Unexpected value type in superSmallMap: " + value.getClass());
+                    }
+                } else {
+                    return 0L;
+                }
             case SMALL:
                 return smallMap.contains(key) ? smallMap.get(key) : 0L;
             case LARGE:

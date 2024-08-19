@@ -20,6 +20,19 @@ public class Context {
     public ParallelContext parallel;
     public DebugContext debug;
 
+    public Context() {
+    }
+    public Context(Context other) {
+        this.rearrangeBy = other.rearrangeBy;
+        this.partitioning = other.partitioning;
+        this.partition = other.partition;
+        this.coarsening = other.coarsening;
+        this.initialPartitioning = other.initialPartitioning;
+        this.refinement = other.refinement;
+        this.parallel = other.parallel;
+        this.debug = other.debug;
+    }
+
     public void setup(Graph graph) {
             partition.setup(graph);
         }

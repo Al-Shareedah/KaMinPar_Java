@@ -44,7 +44,7 @@ public class DeepMultilevelPartitioner extends Partitioner {
     public DeepMultilevelPartitioner(Graph inputGraph, Context inputCtx) {
         this.inputGraph = inputGraph;
         this.inputCtx = inputCtx;
-        this.currentPCtx = inputCtx.partition;
+        this.currentPCtx = new PartitionContext(inputCtx.partition);
         this.coarsener = Factory.createCoarsener(inputGraph, inputCtx.coarsening);
         this.refiner = Factory.createRefiner(inputCtx);
     }
@@ -258,7 +258,7 @@ public class DeepMultilevelPartitioner extends Partitioner {
         PartitionedGraph pGraph;
         switch (inputCtx.partitioning.deepInitialPartitioningMode) {
             case SEQUENTIAL:
-                pGraph = Helper.bipartition(graph, inputCtx.partition.k, inputCtx, ipMCtxPool);
+                pGraph = Helper.bipartition(graph, new BlockID(inputCtx.partition.k.value), new Context(inputCtx), ipMCtxPool);
                 break;
                 /*
             case SYNCHRONOUS_PARALLEL:
@@ -274,7 +274,7 @@ public class DeepMultilevelPartitioner extends Partitioner {
             default:
                 throw new IllegalStateException("Unexpected value: " + inputCtx.partitioning.deepInitialPartitioningMode);
         }
-        Helper.updatePartitionContext(currentPCtx, pGraph, inputCtx.partition.k);
+        Helper.updatePartitionContext(currentPCtx, pGraph, new BlockID(inputCtx.partition.k.value));
         // Log the metrics for the initial partition
         Logger.log("  Number of blocks: " + pGraph.k().value);
         Logger.log("  Cut:              " + Metrics.edgeCut(pGraph).value);

@@ -14,6 +14,24 @@ import java.util.concurrent.TimeUnit;
 public class BlockWeightsContext {
     private List<BlockWeight> perfectlyBalancedBlockWeights;
     private List<BlockWeight> maxBlockWeights;
+    public BlockWeightsContext() {
+        // Default constructor
+    }
+
+    // Copy constructor
+    public BlockWeightsContext(BlockWeightsContext other) {
+        // Deep copy the perfectlyBalancedBlockWeights list
+        this.perfectlyBalancedBlockWeights = new ArrayList<>();
+        for (BlockWeight weight : other.perfectlyBalancedBlockWeights) {
+            this.perfectlyBalancedBlockWeights.add(new BlockWeight(weight.value));
+        }
+
+        // Deep copy the maxBlockWeights list
+        this.maxBlockWeights = new ArrayList<>();
+        for (BlockWeight weight : other.maxBlockWeights) {
+            this.maxBlockWeights.add(new BlockWeight(weight.value));
+        }
+    }
 
     public void setup(PartitionContext pCtx) {
         if (pCtx.k.value == 0) {

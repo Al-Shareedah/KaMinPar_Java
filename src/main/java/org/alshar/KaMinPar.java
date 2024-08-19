@@ -36,7 +36,7 @@ public class KaMinPar {
         int maxTimerDepth = 3;
 
         @Parameter(names = {"-k", "--k"}, description = "Number of blocks in the partition.", required = true)
-        int k = 0;
+        int k = 4;
 
         @Parameter(names = {"-q", "--quiet"}, description = "Suppress all console output.")
         boolean quiet = false;

@@ -3,6 +3,7 @@ package org.alshar.kaminpar_shm.coarsening;
 import org.alshar.Graph;
 import org.alshar.common.GraphUtils.ContractResult;
 import org.alshar.common.GraphUtils.MemoryContext;
+import org.alshar.common.Seq;
 import org.alshar.common.datastructures.*;
 import org.alshar.common.context.CoarseningContext;
 import org.alshar.kaminpar_shm.PartitionedGraph;
@@ -47,13 +48,16 @@ public class ClusteringCoarsener extends Coarsener {
 
         // Extract the contracted graph from the result
         Graph contractedGraph = result.getCoarseGraph();
+        int[] c_mapping = result.getMapping();
+        mCtx = result.getmCtx();
+
 
         // Determine if coarsening has converged
         boolean converged = cCtx.coarseningShouldConverge(currentGraph.n().value, contractedGraph.n().value);
 
         // Update the hierarchy and mapping
         hierarchy.add(contractedGraph);
-        mapping.add(clusteringArray); // Keep the original int[] for the mapping
+        mapping.add(c_mapping);
         currentGraph = contractedGraph;
 
         // Return the new coarse graph and whether coarsening has not converged
@@ -62,22 +66,30 @@ public class ClusteringCoarsener extends Coarsener {
 
     @Override
     public PartitionedGraph uncoarsen(PartitionedGraph pGraph) {
-        // Uncoarsen logic (assuming correct mapping and hierarchy usage)
+        // Ensure the current graph matches the one in pGraph
+        assert pGraph.getGraph().equals(currentGraph);
+        assert !mapping.isEmpty() : "Mapping stack should not be empty";
+
+        // Start the uncoarsening process
         int[] lastMapping = mapping.remove(mapping.size() - 1);
-        Graph previousGraph = hierarchy.remove(hierarchy.size() - 1);
-        Graph finerGraph = hierarchy.isEmpty() ? inputGraph : hierarchy.get(hierarchy.size() - 1);
+        hierarchy.remove(hierarchy.size() - 1); // Removes the graph wrapped in pGraph
+        currentGraph = hierarchy.isEmpty() ? inputGraph : hierarchy.get(hierarchy.size() - 1);
+
+        assert lastMapping.length == currentGraph.n().value : "Mapping size mismatch";
 
         // Create the uncoarsened partition
-        StaticArray<BlockID> partition = new StaticArray<>(finerGraph.n().value);
-        for (int u = 0; u < finerGraph.n().value; ++u) {
+        StaticArray<BlockID> partition = new StaticArray<>(currentGraph.n().value);
+        for (int u = 0; u < currentGraph.n().value; ++u) {
+            partition.set(u, new BlockID(0));  // Initialize each element to BlockID(0)
+        }
+
+        for (int u = 0; u < currentGraph.n().value; ++u) {
             partition.set(u, pGraph.block(new NodeID(lastMapping[u])));
         }
 
-        // Update the current graph
-        currentGraph = finerGraph;
-
-        return new PartitionedGraph(finerGraph, pGraph.k(), partition);
+        return new PartitionedGraph(new Seq(),currentGraph, pGraph.k(), partition);
     }
+
 
     @Override
     public Graph coarsestGraph() {

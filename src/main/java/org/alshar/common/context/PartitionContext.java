@@ -19,6 +19,19 @@ public class PartitionContext {
         blockWeights.setup(this);
     }
 
+    public PartitionContext() {
+    }
+    public PartitionContext(PartitionContext other) {
+        this.epsilon = other.epsilon;
+        this.k = other.k;
+        this.n = new NodeID(other.n.value);
+        this.m = new EdgeID(other.m.value);
+        this.totalNodeWeight = new NodeWeight(other.totalNodeWeight.value);
+        this.totalEdgeWeight = new EdgeWeight(other.totalEdgeWeight.value);
+        this.maxNodeWeight = new NodeWeight(other.maxNodeWeight.value);
+        this.blockWeights = new BlockWeightsContext(other.blockWeights);
+    }
+
     public void setup(Graph graph) {
         n = new NodeID(graph.n().value);
         m = new EdgeID(graph.m().value);

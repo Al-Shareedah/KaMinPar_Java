@@ -17,4 +17,12 @@ public class ContractResult {
     public Graph getCoarseGraph() {
         return coarseGraph;
     }
+
+    public int[] getMapping() {
+        return mapping;
+    }
+
+    public Contraction.MemoryContext getmCtx() {
+        return mCtx;
+    }
 }

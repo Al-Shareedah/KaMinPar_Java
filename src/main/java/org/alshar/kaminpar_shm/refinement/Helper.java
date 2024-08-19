@@ -45,7 +45,8 @@ public class Helper {
     }
 
     public static PartitionedGraph bipartition(Graph graph, BlockID finalK, Context inputCtx, GlobalInitialPartitionerMemoryPool  ipMCtxPool) {
-        InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx, finalK, ipMCtxPool.local().get());
+        Context inputCtx_copy =inputCtx;
+        InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx_copy, finalK, ipMCtxPool.local().get());
         PartitionedGraph pGraph = partitioner.partition();
         ipMCtxPool.local().put(partitioner.free());
         return pGraph;
@@ -107,7 +108,7 @@ public class Helper {
         // Extract subgraphs from the partitioned graph
         SubgraphExtractionResult extraction = extractSubgraphs(pGraph, inputCtx.partition.k, subgraphMemory);
 
-        // Use size() instead of length
+        // Initialize subgraph partitions
         StaticArray<StaticArray<BlockID>> subgraphPartitions = new StaticArray<>(extraction.subgraphs.size());
         for (int i = 0; i < extraction.subgraphs.size(); i++) {
             subgraphPartitions.set(i, new StaticArray<>(extraction.subgraphs.get(i).n().value));
@@ -118,49 +119,45 @@ public class Helper {
         final Context finalInputCtx = inputCtx;
         final SubgraphExtractionResult finalExtraction = extraction;
 
-        PartitionedGraph finalPGraph = pGraph;
+        // Parallel bipartitioning of subgraphs
         ForkJoinPool.commonPool().invoke(new RecursiveAction() {
             @Override
             protected void compute() {
-                ForkJoinPool.commonPool().submit(() -> {
-                    for (BlockID b = new BlockID(0); b.value < finalExtraction.subgraphs.size(); b = b.add(1)) {
-                        Graph subgraph = finalExtraction.subgraphs.get(b.value);
-                        BlockID finalKb = new BlockID(computeFinalK(b.value, finalPGraph.k().value, finalInputCtx.partition.k.value));
-                        BlockID subgraphK = (kPrime.equals(finalInputCtx.partition.k)) ? finalKb : new BlockID(kPrime.value / finalPGraph.k().value);
-                        if (subgraphK.value > 1) {
-                            extendPartitionRecursive(
-                                    subgraph,
-                                    finalSubgraphPartitions.get(b.value),
-                                    new BlockID(0),
-                                    subgraphK,
-                                    finalKb,
-                                    finalInputCtx,
-                                    finalSubgraphMemory,
-                                    finalExtraction.positions.get(b.value),
-                                    extractionPool,
-                                    ipMCtxPool
-                            );
+                for (BlockID b = new BlockID(0); b.value < finalExtraction.subgraphs.size(); b = b.add(1)) {
+                    Graph subgraph = finalExtraction.subgraphs.get(b.value);
+                    BlockID finalKb = new BlockID(computeFinalK(b.value, pGraph.k().value, finalInputCtx.partition.k.value));
+                    BlockID subgraphK = (kPrime.equals(finalInputCtx.partition.k)) ? finalKb : new BlockID(kPrime.value / pGraph.k().value);
 
-                        }
+                    if (subgraphK.value > 1) {
+                        extendPartitionRecursive(
+                                subgraph,
+                                finalSubgraphPartitions.get(b.value),
+                                new BlockID(0),
+                                subgraphK,
+                                finalKb,
+                                finalInputCtx,
+                                finalSubgraphMemory,
+                                finalExtraction.positions.get(b.value),
+                                extractionPool,
+                                ipMCtxPool
+                        );
                     }
-                }).join();
+                }
             }
         });
 
+        // Convert the StaticArray to List for use in copySubgraphPartitions
         List<StaticArray<BlockID>> subgraphPartitionsList = new ArrayList<>();
         for (int i = 0; i < finalSubgraphPartitions.size(); i++) {
             subgraphPartitionsList.add(finalSubgraphPartitions.get(i));
         }
 
-        // Now pass this list to copySubgraphPartitions
+        // Copy subgraph partitions into the main partitioned graph
         pGraph = copySubgraphPartitions(pGraph, subgraphPartitionsList, kPrime, inputCtx.partition.k, finalExtraction.nodeMapping);
-
 
         // Update the partition context
         updatePartitionContext(currentPCtx, pGraph, inputCtx.partition.k);
     }
-
-
 
     public static void extendPartition(
             PartitionedGraph pGraph,
