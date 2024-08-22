@@ -3,6 +3,7 @@ import org.alshar.Context;
 
 import java.io.PrintStream;
 
+import org.alshar.KaMinPar;
 import org.alshar.common.Math.Random_shm;
 import org.alshar.common.enums.*;
 import org.alshar.common.context.*;
@@ -15,13 +16,21 @@ import java.util.stream.Collectors;
 import static org.alshar.common.LoggerMacros.LOG;
 
 public class cio {
+    public static void printDelimiter() {
+        printDelimiter("", '#');
+    }
+
+    // Method with caption and character arguments
     public static void printDelimiter(String caption, char ch) {
-        if (!caption.isEmpty()) {
-            LOG.log(ch + " " + caption + " " + ch);
-        } else {
+        if (caption.isEmpty()) {
+            // Print a line with only the character 'ch' repeated 80 times
             LOG.log(String.valueOf(ch).repeat(80));
+        } else {
+            // Calculate the length of the filler on either side of the caption
+            int fillerLength = 80 - caption.length() - 5;
+            // Print the filler characters, then the caption, then 3 more characters 'ch'
+            LOG.log(String.valueOf(ch).repeat(fillerLength) + " " + caption + " " + String.valueOf(ch).repeat(3));
         }
-        LOG.flush();
     }
 
     public static void printDelimiter(String caption) {
@@ -29,7 +38,22 @@ public class cio {
     }
 
     public static void printKaminparBanner() {
-        LOG.log("KaMinPar - KaHIP Graph Partitioning");
+        printDelimiter("", '#');
+
+        LOG.log("#                _  __       __  __  _         ____                  " +
+                "          #");
+        LOG.log("#               | |/ / __ _ |  \\/  |(_) _ __  |  _ \\  __ _  _ __   " +
+                "            #");
+        LOG.log("#               | ' / / _` || |\\/| || || '_ \\ | |_) |/ _` || '__|  " +
+                "            #");
+        LOG.log("#               | . \\| (_| || |  | || || | | ||  __/| (_| || |      " +
+                "           #");
+        LOG.log("#               |_|\\_\\\\__,_||_|  |_||_||_| |_||_|    \\__,_||_|   " +
+                "              #");
+        LOG.log("#                                                                    " +
+                "          #");
+
+        printDelimiter("", '#');
     }
 
     public static void printDkaminparBanner() {
@@ -124,7 +148,7 @@ public class cio {
         if (p_ctx.n.value == p_ctx.totalNodeWeight.value) {
             out.println(" (unweighted)");
         } else {
-            out.println(" (total weight: " + p_ctx.totalNodeWeight + ")");
+            out.println(" (total weight: " + p_ctx.totalNodeWeight.value + ")");
         }
         out.printf("  Number of edges:            %" + width + "d", p_ctx.m.value);
         if (p_ctx.m.value == p_ctx.totalEdgeWeight.value) {
@@ -151,13 +175,13 @@ public class cio {
         out.println("Graph:                        " + ctx.debug.graphName
                 + " [ordering: " + ctx.rearrangeBy + "]");
         print(ctx.partition, out);
-        printDelimiter("Partitioning Scheme", '-');
+        printDelimiter("Partitioning Scheme", '#');
         print(ctx.partitioning, out);
-        printDelimiter("Coarsening", '-');
+        printDelimiter("Coarsening", '#');
         print(ctx.coarsening, out);
-        printDelimiter("Initial Partitioning", '-');
+        printDelimiter("Initial Partitioning", '#');
         print(ctx.initialPartitioning, out);
-        printDelimiter("Refinement", '-');
+        printDelimiter("Refinement", '#');
         print(ctx.refinement, out);
     }
 

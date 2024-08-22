@@ -5,11 +5,9 @@ import org.alshar.Graph;
 import org.alshar.common.GraphUtils.*;
 import org.alshar.common.Logger;
 import org.alshar.common.context.*;
-import org.alshar.common.datastructures.BlockID;
-import org.alshar.common.datastructures.EdgeID;
-import org.alshar.common.datastructures.NodeID;
-import org.alshar.common.datastructures.NodeWeight;
+import org.alshar.common.datastructures.*;
 import org.alshar.common.enums.InitialPartitioningMode;
+import org.alshar.common.timer.Timer_km;
 import org.alshar.kaminpar_shm.coarsening.Coarsener;
 import org.alshar.kaminpar_shm.refinement.Helper;
 import org.alshar.kaminpar_shm.refinement.Refiner;
@@ -60,6 +58,9 @@ public class DeepMultilevelPartitioner extends Partitioner {
         pGraph = uncoarsen(pGraph, refined);
 
         if (!refined || pGraph.k().value < inputCtx.partition.k.value) {
+            Logger.logTwoEmptyLines();
+            Logger.log("Toplevel:  ");
+
             if (!refined) {
                 refine(pGraph);
             }
@@ -69,24 +70,28 @@ public class DeepMultilevelPartitioner extends Partitioner {
             }
         }
 
+
+        Logger.logTwoEmptyLines();
         // Calculate connected components in each block before returning pGraph
         calculateConnectedComponentsAndCCM(pGraph);
 
-        printStatistics();
+        //printStatistics();
         return pGraph;
     }
 
     private PartitionedGraph uncoarsen(PartitionedGraph pGraph, boolean refined) {
         while (!coarsener.isEmpty()) {  // Check if there are more levels to uncoarsen
+            Logger.logTwoEmptyLines();
             Logger.log("Uncoarsening -> Level " + coarsener.size());
 
             pGraph = uncoarsenOnce(pGraph);
             refine(pGraph);
+
             refined = true;
 
             BlockID desiredK = computeKForN(pGraph.n(), inputCtx);
             if (pGraph.k().value < desiredK.value) {
-                extendPartition(pGraph, desiredK);
+                pGraph = extendPartition(pGraph, desiredK);
                 refined = false;
             }
         }
@@ -114,14 +119,28 @@ public class DeepMultilevelPartitioner extends Partitioner {
     }
 
 
-    private void extendPartition(PartitionedGraph pGraph, BlockID kPrime) {
+    private PartitionedGraph extendPartition(PartitionedGraph pGraph, BlockID kPrime) {
         Logger.log("  Extending partition from " + pGraph.k().value + " blocks to " + kPrime.value + " blocks");
+        // Initialize an array to store the new block sizes (weights)
+        int[] newBlockSizes = new int[pGraph.k().value];
+
+        // Calculate the size of each block in the partition
+        for (int u = 0; u < pGraph.n().value; u++) {
+            BlockID block = pGraph.block(new NodeID(u));
+            newBlockSizes[block.value] += pGraph.nodeWeight(new NodeID(u)).value;
+        }
+
+        // Replace the existing block weights with the calculated sizes
+        for (int b = 0; b < pGraph.k().value; b++) {
+            pGraph.setBlockWeight(new BlockID(b), new BlockWeight(newBlockSizes[b]));
+        }
 
         // Call the method in the Helper class
-        Helper.extendPartition(pGraph, kPrime, inputCtx, currentPCtx, ipExtractionPool, ipMCtxPool);
+        pGraph = Helper.extendPartition(pGraph, kPrime, inputCtx, currentPCtx, ipExtractionPool, ipMCtxPool);
 
         Logger.log("    Cut:       " + Metrics.edgeCut(pGraph).value);
         Logger.log("    Imbalance: " + Metrics.imbalance(pGraph));
+        return pGraph;
     }
 
 
@@ -168,7 +187,7 @@ public class DeepMultilevelPartitioner extends Partitioner {
         return cGraph;
     }
     private void calculateCCM(List<Integer> actualSizes, int totalNodes) {
-        List<Integer> desiredSizes = Arrays.asList(7538, 2261, 678, 203);
+        List<Integer> desiredSizes = Arrays.asList(2670, 3204, 2136, 2670);
         int totalDifference = 0;
         int partitionsNotMeetingSize = 0;
         double totalPercentageOff = 0.0;
@@ -235,6 +254,8 @@ public class DeepMultilevelPartitioner extends Partitioner {
                     connectedComponents.put(node, component);
                 }
             }
+            int numComponents = connectedComponents.size();
+            System.out.printf("Block %d has %d nodes and %d components:\n", blockId.value, nodes.size(), numComponents);
 
             actualSizes.add(nodes.size());
         }
@@ -255,32 +276,48 @@ public class DeepMultilevelPartitioner extends Partitioner {
     }
 
     private PartitionedGraph initialPartition(Graph graph) {
-        PartitionedGraph pGraph;
-        switch (inputCtx.partitioning.deepInitialPartitioningMode) {
-            case SEQUENTIAL:
-                pGraph = Helper.bipartition(graph, new BlockID(inputCtx.partition.k.value), new Context(inputCtx), ipMCtxPool);
-                break;
+        // Start timing the "Initial partitioning scheme"
+        try (var timer = Timer_km.global().startScopedTimer("Initial partitioning scheme")) {
+
+
+            Logger.logTwoEmptyLines();
+            Logger.log("Initial partitioning:");
+
+            // Since timers are not multi-threaded, disable them during parallel initial partitioning.
+
+            Timer_km.global().disable();
+
+            PartitionedGraph pGraph;
+            switch (inputCtx.partitioning.deepInitialPartitioningMode) {
+                case SEQUENTIAL:
+                    pGraph = Helper.bipartition(graph, new BlockID(inputCtx.partition.k.value), new Context(inputCtx), ipMCtxPool);
+                    break;
                 /*
-            case SYNCHRONOUS_PARALLEL:
-                pGraph = new SyncInitialPartitioner(inputCtx, ipMCtxPool, ipExtractionPool)
+                case SYNCHRONOUS_PARALLEL:
+                    pGraph = new SyncInitialPartitioner(inputCtx, ipMCtxPool, ipExtractionPool)
                         .partition(coarsener, currentPCtx);
-                break;
-            case ASYNCHRONOUS_PARALLEL:
-                pGraph = new AsyncInitialPartitioner(inputCtx, ipMCtxPool, ipExtractionPool)
+                    break;
+                case ASYNCHRONOUS_PARALLEL:
+                    pGraph = new AsyncInitialPartitioner(inputCtx, ipMCtxPool, ipExtractionPool)
                         .partition(coarsener, currentPCtx);
-                break;
+                    break;
 
                  */
-            default:
-                throw new IllegalStateException("Unexpected value: " + inputCtx.partitioning.deepInitialPartitioningMode);
+                default:
+                    throw new IllegalStateException("Unexpected value: " + inputCtx.partitioning.deepInitialPartitioningMode);
+            }
+            // Re-enable the timers after the partitioning is done.
+            Timer_km.global().enable();
+
+            Helper.updatePartitionContext(currentPCtx, pGraph, new BlockID(inputCtx.partition.k.value));
+            // Log the metrics for the initial partition
+            Logger.log("  Number of blocks: " + pGraph.k().value);
+            Logger.log("  Cut:              " + Metrics.edgeCut(pGraph).value);
+            Logger.log("  Imbalance:        " + Metrics.imbalance(pGraph));
+            Logger.log("  Feasible:         " + (Metrics.isFeasible(pGraph, currentPCtx) ? "yes" : "no"));
+            return pGraph;
+
         }
-        Helper.updatePartitionContext(currentPCtx, pGraph, new BlockID(inputCtx.partition.k.value));
-        // Log the metrics for the initial partition
-        Logger.log("  Number of blocks: " + pGraph.k().value);
-        Logger.log("  Cut:              " + Metrics.edgeCut(pGraph).value);
-        Logger.log("  Imbalance:        " + Metrics.imbalance(pGraph));
-        Logger.log("  Feasible:         " + (Metrics.isFeasible(pGraph, currentPCtx) ? "yes" : "no"));
-        return pGraph;
     }
     private boolean helperParallelIpMode(InitialPartitioningMode mode) {
         return mode == InitialPartitioningMode.ASYNCHRONOUS_PARALLEL ||

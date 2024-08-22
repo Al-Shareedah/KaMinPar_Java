@@ -58,14 +58,14 @@ public class InitialPartitioner {
     public PartitionedGraph partition() {
         Graph cGraph = coarsen();
 
-        Logger.log("Calling bipartitioner on coarsest graph with n=" + cGraph.n().value + " m=" + cGraph.m().value);
+        //Logger.log("Calling bipartitioner on coarsest graph with n=" + cGraph.n().value + " m=" + cGraph.m().value);
         PoolBipartitionerFactory factory = new PoolBipartitionerFactory();
         PoolBipartitioner bipartitioner = factory.create(cGraph, p_ctx, i_ctx, m_ctx.poolMCtx);
         bipartitioner.setNumRepetitions(numBipartitionRepetitions);
         PartitionedGraph pGraph = bipartitioner.bipartition();
         m_ctx.poolMCtx = bipartitioner.free();
 
-        Logger.log("Bipartitioner result: cut=" + Metrics.edgeCutSeq(pGraph).value + " imbalance=" + Metrics.imbalance(pGraph) + " feasible=" + Metrics.isFeasible(pGraph, p_ctx));
+        //Logger.log("Bipartitioner result: cut=" + Metrics.edgeCutSeq(pGraph).value + " imbalance=" + Metrics.imbalance(pGraph) + " feasible=" + Metrics.isFeasible(pGraph, p_ctx));
 
         return uncoarsen(pGraph);
     }
@@ -80,13 +80,13 @@ public class InitialPartitioner {
         Graph cGraph = graph;
         boolean shrunk = true;
 
-        Logger.log("Coarsen: n=" + cGraph.n().value + " m=" + cGraph.m().value);
+        //Logger.log("Coarsen: n=" + cGraph.n().value + " m=" + cGraph.m().value);
 
         while (shrunk && cGraph.n().getValue() > cCtx.contractionLimit) {
             Graph newCGraph = coarsener.coarsen(StaticMaxClusterWeight.of(maxClusterWeight));
             shrunk = newCGraph != cGraph;
 
-            Logger.log("-> n=" + newCGraph.n().value + " m=" + newCGraph.m().value + " maxClusterWeight=" + maxClusterWeight.value + (shrunk ? "" : " ==> terminate"));
+            //Logger.log("-> n=" + newCGraph.n().value + " m=" + newCGraph.m().value + " maxClusterWeight=" + maxClusterWeight.value + (shrunk ? "" : " ==> terminate"));
 
             if (shrunk) {
                 cGraph = newCGraph;
@@ -97,14 +97,14 @@ public class InitialPartitioner {
     }
 
     private PartitionedGraph uncoarsen(PartitionedGraph pGraph) {
-        Logger.log("Uncoarsen: n=" + pGraph.n().value + " m=" + pGraph.m().value);
+        //Logger.log("Uncoarsen: n=" + pGraph.n().value + " m=" + pGraph.m().value);
 
         while (!coarsener.empty()) {
             pGraph = coarsener.uncoarsen(pGraph);
             refiner.initialize(pGraph.getGraph());
             refiner.refine(pGraph, p_ctx);
 
-            Logger.log("-> n=" + pGraph.n() + " m=" + pGraph.m() + " cut=" + Metrics.edgeCutSeq(pGraph) + " imbalance=" + Metrics.imbalance(pGraph) + " feasible=" + Metrics.isFeasible(pGraph, p_ctx));
+            //Logger.log("-> n=" + pGraph.n().value + " m=" + pGraph.m().value + " cut=" + Metrics.edgeCutSeq(pGraph).value + " imbalance=" + Metrics.imbalance(pGraph) + " feasible=" + Metrics.isFeasible(pGraph, p_ctx));
         }
 
         return pGraph;

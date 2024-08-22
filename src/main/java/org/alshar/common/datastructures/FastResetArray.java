@@ -64,6 +64,11 @@ public class FastResetArray<T> {
         }
         return entries;
     }
+    // Clear only the usedEntries list without modifying the data array
+    public void clearUsedEntries() {
+        usedEntries.clear();
+    }
+
 
     // Clear the used entries, reset them to 0 instead of null
     @SuppressWarnings("unchecked")

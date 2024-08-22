@@ -4,6 +4,7 @@ import org.alshar.common.ParallelUtils.ParallelFor;
 import org.alshar.common.context.*;
 import org.alshar.Graph;
 import org.alshar.common.datastructures.*;
+import org.alshar.common.timer.Timer_km;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -80,16 +81,26 @@ public class LPClustering extends Clusterer {
             initialize(graph, graph.n());
 
             for (int iteration = 0; iteration < cCtx.lp.numIterations; ++iteration) {
-                if (performIteration() == 0) {
-                    break;
+                // Start a scoped timer for each iteration
+                try (var iterationTimer = Timer_km.global().startScopedTimer("Iteration", String.valueOf(iteration))) {
+                    if (performIteration() == 0) {
+                        break;
+                    }
                 }
             }
 
-            clusterIsolatedNodes();
-            clusterTwoHopNodes();
+            // Add timers for clustering isolated and two-hop nodes
+            try (var isolatedNodesTimer = Timer_km.global().startScopedTimer("Cluster Isolated Nodes")) {
+                clusterIsolatedNodes();
+            }
+
+            try (var twoHopNodesTimer = Timer_km.global().startScopedTimer("Cluster Two Hop Nodes")) {
+                clusterTwoHopNodes();
+            }
 
             return clusters();
         }
+
 
         private void allocate(int maxN, int maxClusters) {
             clusters = new AtomicIntegerArray(maxN);

@@ -36,4 +36,5 @@ public class Context {
     public void setup(Graph graph) {
             partition.setup(graph);
         }
+
 }

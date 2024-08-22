@@ -1,7 +1,10 @@
 package org.alshar.common.GraphUtils;
 import org.alshar.Graph;
+import org.alshar.common.ParallelUtils.ParallelFor;
 import org.alshar.common.Seq;
 import org.alshar.common.datastructures.*;
+import org.alshar.common.timer.Timer_km;
+import org.alshar.kaminpar_shm.Metrics;
 import org.alshar.kaminpar_shm.PartitionedGraph;
 
 import java.util.ArrayList;
@@ -14,6 +17,7 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.stream.IntStream;
 
+import static org.alshar.Graph.Debug.validateGraph;
 import static org.alshar.kaminpar_shm.PartitionUtils.computeFinalK;
 
 public class SubgraphExtractor {
@@ -182,71 +186,86 @@ public class SubgraphExtractor {
         AtomicIntegerArray bucketIndex = new AtomicIntegerArray(pGraph.k().value);
         List<Graph> subgraphs = new ArrayList<>(Collections.nCopies(pGraph.k().value, null));
 
-        // Initialize positions
-        for (int i = 0; i < pGraph.k().value + 1; i++) {
-            startPositions.add(new SubgraphMemoryStartPosition(0, 0)); // Provide initial values
+        // Start the allocation timer
+        try (var allocationTimer = Timer_km.global().startScopedTimer("Allocation")) {
+            // Initialize positions
+            for (int i = 0; i < pGraph.k().value + 1; i++) {
+                startPositions.add(new SubgraphMemoryStartPosition(0, 0)); // Provide initial values
+            }
         }
 
         // Count number of nodes and edges in each block
         AtomicIntegerArray numNodesInBlock = new AtomicIntegerArray(pGraph.k().value);
         AtomicLongArray numEdgesInBlock = new AtomicLongArray(pGraph.k().value);
-
-        ForkJoinPool.commonPool().invoke(new RecursiveAction() {
-            @Override
-            protected void compute() {
-                IntStream.range(0, n).parallel().forEach(u -> {
+        // Count number of nodes and edges in each block
+        try (var countBlockSizeTimer = Timer_km.global().startScopedTimer("Count block size")) {
+            ParallelFor.parallelFor(0, n, 1, (start, end) -> {
+                for (int u = start; u < end; u++) {
                     int uBlock = pGraph.block(new NodeID(u)).value;
                     numNodesInBlock.incrementAndGet(uBlock);
+
                     for (NodeID v : graph.adjacentNodes(new NodeID(u))) {
                         if (pGraph.block(v).value == uBlock) {
                             numEdgesInBlock.incrementAndGet(uBlock);
                         }
                     }
-                });
-            }
-        });
+                }
+            });
+        }
 
         // Merge block sizes and compute final K
-        for (int b = 0; b < pGraph.k().value; b++) {
-            int padding = computeFinalK(b, pGraph.k().value, inputK.value); // Correctly compute padding
-            startPositions.get(b + 1).nodesStartPos = numNodesInBlock.get(b) + padding;
-            startPositions.get(b + 1).edgesStartPos = numEdgesInBlock.get(b);
+        try (var mergeBlockSizesTimer = Timer_km.global().startScopedTimer("Merge block sizes")) {
+            // Merge block sizes and compute final K
+            ParallelFor.parallelFor(0, pGraph.k().value, 1, (start, end) -> {
+                for (int b = start; b < end; b++) {
+                    int padding = computeFinalK(b, pGraph.k().value, inputK.value); // Correctly compute padding
+                    startPositions.get(b + 1).nodesStartPos = numNodesInBlock.get(b) + padding;
+                    startPositions.get(b + 1).edgesStartPos = numEdgesInBlock.get(b);
+                }
+            });
+
+            // Apply prefix sum to start positions
+            for (int b = 1; b <= pGraph.k().value; b++) {
+                startPositions.get(b).nodesStartPos += startPositions.get(b - 1).nodesStartPos;
+                startPositions.get(b).edgesStartPos += startPositions.get(b - 1).edgesStartPos;
+            }
         }
 
-        // Apply prefix sum to start positions
-        for (int b = 1; b <= pGraph.k().value; b++) {
-            startPositions.get(b).nodesStartPos += startPositions.get(b - 1).nodesStartPos;
-            startPositions.get(b).edgesStartPos += startPositions.get(b - 1).edgesStartPos;
-        }
 
         // Build temporary bucket array in nodes array
-        ForkJoinPool.commonPool().invoke(new RecursiveAction() {
-            @Override
-            protected void compute() {
-                IntStream.range(0, n).parallel().forEach(u -> {
+        try (var buildBucketArrayTimer = Timer_km.global().startScopedTimer("Build bucket array")) {
+            // Build temporary bucket array in nodes array
+            ParallelFor.parallelFor(0, n, 1, (start, end) -> {
+                for (int u = start; u < end; u++) {
                     int b = pGraph.block(new NodeID(u)).value;
-                    int posInSubgraph = bucketIndex.incrementAndGet(b);
+                    int posInSubgraph = bucketIndex.getAndIncrement(b); // This remains atomic, so no need to change it
                     long pos = startPositions.get(b).nodesStartPos + posInSubgraph;
+                    if (pos >= subgraphMemory.getNodes().size()) {
+                        System.out.println("Error: Position " + pos + " out of bounds for subgraph memory nodes.");
+                        continue; // Skip this invalid mapping
+                    }
                     subgraphMemory.getNodes().set((int) pos, new EdgeID(u));
                     mapping.set(u, posInSubgraph);
-                });
-            }
-        });
+                }
+            });
+        }
+
+
 
         boolean isNodeWeighted = /* graph.nodeWeighted() */ false;
         boolean isEdgeWeighted = graph.edgeWeighted();
 
         // Build subgraph
-        ForkJoinPool.commonPool().invoke(new RecursiveAction() {
-            @Override
-            protected void compute() {
-                IntStream.range(0, pGraph.k().value).parallel().forEach(b -> {
+        try (var constructSubgraphsTimer = Timer_km.global().startScopedTimer("Construct subgraphs")) {
+            ParallelFor.parallelFor(0, pGraph.k().value, 1, (start, end) -> {
+                for (int b = start; b < end; b++) {
                     long nodesStartPos = startPositions.get(b).nodesStartPos;
                     long e = 0;
                     for (int u = 0; u < bucketIndex.get(b); u++) {
                         long pos = nodesStartPos + u;
                         int uPrime = subgraphMemory.getNodes().get((int) pos).value;
                         subgraphMemory.getNodes().set((int) pos, new EdgeID((int) e));
+
                         if (isNodeWeighted) {
                             subgraphMemory.getNodeWeights().set((int) pos, new NodeWeight(graph.nodeWeight(new NodeID(uPrime)).value));
                         }
@@ -258,40 +277,47 @@ public class SubgraphExtractor {
                                 if (isEdgeWeighted) {
                                     subgraphMemory.getEdgeWeights().set((int) (e0 + e), new EdgeWeight(graph.edgeWeight(edge.getEdgeID()).value));
                                 }
-                                subgraphMemory.getEdges().set((int) (e0 + e), new NodeID(mapping.get(edge.getTarget().value)));
+                                NodeID mappedTarget = new NodeID(mapping.get(edge.getTarget().value));
+
+                                if (mappedTarget.value >= bucketIndex.get(b)) {
+                                    System.out.println("Error: Mapped target " + mappedTarget.value + " is out of range for subgraph " + b);
+                                    continue;
+                                }
+
+                                subgraphMemory.getEdges().set((int) (e0 + e), mappedTarget);
                                 e++;
                             }
                         }
                     }
                     subgraphMemory.getNodes().set((int) (nodesStartPos + bucketIndex.get(b)), new EdgeID((int) e));
-                });
-            }
-        });
+                }
+            });
+        }
 
         // Create graph objects
-        ForkJoinPool.commonPool().invoke(new RecursiveAction() {
-            @Override
-            protected void compute() {
-                IntStream.range(0, pGraph.k().value).parallel().forEach(b -> {
+        try (var createGraphObjectsTimer = Timer_km.global().startScopedTimer("Create graph objects")) {
+            ParallelFor.parallelFor(0, pGraph.k().value, 1, (start, end) -> {
+                for (int b = start; b < end; b++) {
                     long n0 = startPositions.get(b).nodesStartPos;
                     long m0 = startPositions.get(b).edgesStartPos;
 
-                    long n = Math.abs(startPositions.get(b + 1).nodesStartPos - n0 - computeFinalK(b, pGraph.k().value, inputK.value));
-                    long m = Math.abs(startPositions.get(b + 1).edgesStartPos - m0);
+                    long numNodes = startPositions.get(b + 1).nodesStartPos - n0 - computeFinalK(b, pGraph.k().value, inputK.value);
+                    long numEdges = startPositions.get(b + 1).edgesStartPos - m0;
 
-                    StaticArray<EdgeID> sNodes = new StaticArray<>((int) n0, (int) (n + 1), subgraphMemory.getNodes().getArray());
-                    StaticArray<NodeID> sEdges = new StaticArray<>((int) m0, (int) m, subgraphMemory.getEdges().getArray());
-                    StaticArray<NodeWeight> sNodeWeights = new StaticArray<>(isNodeWeighted ? (int) n0 : 0, isNodeWeighted ? (int) n : 0, subgraphMemory.getNodeWeights().getArray());
-                    StaticArray<EdgeWeight> sEdgeWeights = new StaticArray<>(isEdgeWeighted ? (int) m0 : 0, isEdgeWeighted ? (int) m : 0, subgraphMemory.getEdgeWeights().getArray());
+                    StaticArray<EdgeID> sNodes = new StaticArray<>((int) n0, (int) (numNodes + 1), subgraphMemory.getNodes().getArray());
+                    StaticArray<NodeID> sEdges = new StaticArray<>((int) m0, (int) numEdges, subgraphMemory.getEdges().getArray());
+                    StaticArray<NodeWeight> sNodeWeights = new StaticArray<>(isNodeWeighted ? (int) n0 : 0, isNodeWeighted ? (int) numNodes : 0, subgraphMemory.getNodeWeights().getArray());
+                    StaticArray<EdgeWeight> sEdgeWeights = new StaticArray<>(isEdgeWeighted ? (int) m0 : 0, isEdgeWeighted ? (int) numEdges : 0, subgraphMemory.getEdgeWeights().getArray());
 
-                    subgraphs.set(b, new Graph(new Seq(),sNodes, sEdges, sNodeWeights, sEdgeWeights, false));
-                });
-            }
-        });
+                    subgraphs.set(b, new Graph(new Seq(), sNodes, sEdges, sNodeWeights, sEdgeWeights, false));
+                }
+            });
+        }
 
 
         return new SubgraphExtractionResult(subgraphs, mapping, startPositions);
     }
+
 
     // Utility method to copy subgraph partitions back into the original partitioned graph
     public static PartitionedGraph copySubgraphPartitions(
@@ -312,20 +338,34 @@ public class SubgraphExtractor {
         }
 
         k0[0] = 0;
-        Arrays.parallelPrefix(k0, Integer::sum);
+        for (int i = 1; i < k0.length; i++) {
+            k0[i] += k0[i - 1];
+        }
 
         // Copy the subgraph partitions into the partitioned graph
         StaticArray<BlockID> partition = pGraph.takeRawPartition();
 
-        IntStream.range(0, pGraph.n().value).parallel().forEach(u -> {
+        for (int u = 0; u < pGraph.n().value; u++) {
             int b = partition.get(u).value;
             int sU = mapping.get(u);
-            partition.set(u, new BlockID(k0[b] + subgraphPartitions.get(b).get(sU).value));
-        });
+            int newBlock = k0[b] + subgraphPartitions.get(b).get(sU).value;
+            partition.set(u, new BlockID(newBlock));
+        }
 
-        PartitionedGraph newPGraph = new PartitionedGraph(pGraph.getGraph(), kPrime, partition);
+        // Create a new PartitionedGraph with the updated partition data
+        PartitionedGraph newPGraph = new PartitionedGraph(new Seq() ,pGraph.getGraph(), kPrime, partition);
+
+        /*
+        // Debugging or logging statements (optional)
+        System.out.println("Statistics after copying the subgraph partitions:");
+        System.out.println("  Block weights: " + Arrays.toString(newPGraph.takeRawBlockWeights().getArray()));
+        System.out.println("  Cut:           " + Metrics.edgeCut(newPGraph).value);
+        System.out.println("  Imbalance:     " + Metrics.imbalance(newPGraph));
+
+         */
 
         return newPGraph;
     }
+
 
 }

@@ -8,6 +8,7 @@ import org.alshar.common.datastructures.BlockID;
 import org.alshar.common.datastructures.NodeID;
 import org.alshar.common.datastructures.NodeWeight;
 import org.alshar.common.context.PartitionContext;
+import org.alshar.common.timer.Timer_km;
 import org.alshar.kaminpar_shm.PartitionUtils;
 import org.alshar.kaminpar_shm.coarsening.Coarsener;
 import org.alshar.kaminpar_shm.PartitionedGraph;
@@ -32,17 +33,26 @@ public class Helper {
     }
 
     public static PartitionedGraph uncoarsenOnce(Coarsener coarsener, PartitionedGraph pGraph, PartitionContext currentPCtx, PartitionContext inputPCtx) {
-        if (!coarsener.isEmpty()) {
-            pGraph = coarsener.uncoarsen(pGraph);
-            updatePartitionContext(currentPCtx, pGraph, inputPCtx.k);
+        // Start timing the "Uncoarsening" process
+        try (var timer = Timer_km.global().startScopedTimer("Uncoarsening")) {
+
+            if (!coarsener.isEmpty()) {
+                pGraph = coarsener.uncoarsen(pGraph);
+                updatePartitionContext(currentPCtx, pGraph, inputPCtx.k);
+            }
+
+            return pGraph;
         }
-        return pGraph;
     }
 
+
     public static void refine(Refiner refiner, PartitionedGraph pGraph, PartitionContext currentPCtx) {
-        refiner.initialize(pGraph);
-        refiner.refine(pGraph, currentPCtx);
+        try (var refinementTimer = Timer_km.global().startScopedTimer("Refinement")) {
+            refiner.initialize(pGraph);
+            refiner.refine(pGraph, currentPCtx);
+        }
     }
+
 
     public static PartitionedGraph bipartition(Graph graph, BlockID finalK, Context inputCtx, GlobalInitialPartitionerMemoryPool  ipMCtxPool) {
         InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx, finalK, ipMCtxPool.local().get());
@@ -76,12 +86,29 @@ public class Helper {
         BlockID[] ks = splitIntegral(k);
         BlockID[] b = new BlockID[]{b0, b0.add(ks[0])};
 
+        // Initialize the partition array with all BlockID(0) values
+        for (int i = 0; i < partition.size(); i++) {
+            partition.set(i, new BlockID(0));
+        }
+
+
         // Update the partition to reflect the bipartition
         for (int i = 0; i < partition.size(); i++) {
             BlockID block = partition.get(i);
-            if (block.equals(b0)) {
+
+            // Check for null before comparing
+            if (block != null && block.equals(b0)) {
                 partition.set(i, b[pGraph.block(new NodeID(i)).value]);
+            } else if (block == null) {
+                // Handle the case where the block is null (optional, depending on your logic)
+                System.out.println("Warning: Encountered null block at position " + i);
             }
+        }
+
+        // Ensure that all nodes have been processed
+        int processedNodes = pGraph.n().value;
+        if (processedNodes != partition.size()) {
+            throw new IllegalStateException("Mismatch in the number of processed nodes and partition size.");
         }
 
         // Check if further recursion is needed
@@ -126,7 +153,7 @@ public class Helper {
     }
 
 
-    public static void extendPartition(
+    public static PartitionedGraph extendPartition(
             PartitionedGraph pGraph,
             BlockID kPrime,
             Context inputCtx,
@@ -135,61 +162,78 @@ public class Helper {
             TemporaryGraphExtractionBufferPool extractionPool,
             GlobalInitialPartitionerMemoryPool ipMCtxPool) {
 
-        // Extract subgraphs from the partitioned graph
-        SubgraphExtractionResult extraction = extractSubgraphs(pGraph, inputCtx.partition.k, subgraphMemory);
+        try (var initialPartitioningTimer = Timer_km.global().startScopedTimer("Initial partitioning")) {
 
-        // Initialize subgraph partitions
-        StaticArray<StaticArray<BlockID>> subgraphPartitions = new StaticArray<>(extraction.subgraphs.size());
-        for (int i = 0; i < extraction.subgraphs.size(); i++) {
-            subgraphPartitions.set(i, new StaticArray<>(extraction.subgraphs.get(i).n().value));
-        }
+            // Extract subgraphs from the partitioned graph
+            SubgraphExtractionResult extraction;
+            try (var extractionTimer = Timer_km.global().startScopedTimer("Extract subgraphs")) {
+                extraction = extractSubgraphs(pGraph, inputCtx.partition.k, subgraphMemory);
+            }
 
-        final StaticArray<StaticArray<BlockID>> finalSubgraphPartitions = subgraphPartitions;
-        final SubgraphMemory finalSubgraphMemory = subgraphMemory;
-        final Context finalInputCtx = inputCtx;
-        final SubgraphExtractionResult finalExtraction = extraction;
-        int currentK = pGraph.k().value;
-        // Parallel bipartitioning of subgraphs
-        ForkJoinPool.commonPool().invoke(new RecursiveAction() {
-            @Override
-            protected void compute() {
-                for (BlockID b = new BlockID(0); b.value < finalExtraction.subgraphs.size(); b = b.add(1)) {
-                    Graph subgraph = finalExtraction.subgraphs.get(b.value);
-                    BlockID finalKb = new BlockID(computeFinalK(b.value, currentK, finalInputCtx.partition.k.value));
-                    BlockID subgraphK = (kPrime.equals(finalInputCtx.partition.k)) ? finalKb : new BlockID(kPrime.value / currentK);
-
-                    if (subgraphK.value > 1) {
-                        extendPartitionRecursive(
-                                subgraph,
-                                finalSubgraphPartitions.get(b.value),
-                                new BlockID(0),
-                                subgraphK,
-                                finalKb,
-                                finalInputCtx,
-                                finalSubgraphMemory,
-                                finalExtraction.positions.get(b.value),
-                                extractionPool,
-                                ipMCtxPool
-                        );
-                    }
+            // Initialize subgraph partitions
+            StaticArray<StaticArray<BlockID>> subgraphPartitions;
+            try (var allocationTimer = Timer_km.global().startScopedTimer("Allocation")) {
+                subgraphPartitions = new StaticArray<>(extraction.subgraphs.size());
+                for (int i = 0; i < extraction.subgraphs.size(); i++) {
+                    subgraphPartitions.set(i, new StaticArray<>(extraction.subgraphs.get(i).n().value));
                 }
             }
-        });
 
-        // Convert the StaticArray to List for use in copySubgraphPartitions
-        List<StaticArray<BlockID>> subgraphPartitionsList = new ArrayList<>();
-        for (int i = 0; i < finalSubgraphPartitions.size(); i++) {
-            subgraphPartitionsList.add(finalSubgraphPartitions.get(i));
+            final StaticArray<StaticArray<BlockID>> finalSubgraphPartitions = subgraphPartitions;
+            final SubgraphMemory finalSubgraphMemory = subgraphMemory;
+            final Context finalInputCtx = inputCtx;
+            final SubgraphExtractionResult finalExtraction = extraction;
+            int currentK = pGraph.k().value;
+
+            // Parallel bipartitioning of subgraphs
+            try (var bipartitioningTimer = Timer_km.global().startScopedTimer("Bipartitioning")) {
+                ForkJoinPool.commonPool().invoke(new RecursiveAction() {
+                    @Override
+                    protected void compute() {
+                        for (BlockID b = new BlockID(0); b.value < finalExtraction.subgraphs.size(); b = b.add(1)) {
+                            Graph subgraph = finalExtraction.subgraphs.get(b.value);
+                            BlockID finalKb = new BlockID(computeFinalK(b.value, currentK, finalInputCtx.partition.k.value));
+                            BlockID subgraphK = (kPrime.equals(finalInputCtx.partition.k)) ? finalKb : new BlockID(kPrime.value / currentK);
+
+                            if (subgraphK.value > 1) {
+                                extendPartitionRecursive(
+                                        subgraph,
+                                        finalSubgraphPartitions.get(b.value),
+                                        new BlockID(0),
+                                        subgraphK,
+                                        finalKb,
+                                        finalInputCtx,
+                                        finalSubgraphMemory,
+                                        finalExtraction.positions.get(b.value),
+                                        extractionPool,
+                                        ipMCtxPool
+                                );
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Convert the StaticArray to List for use in copySubgraphPartitions
+            List<StaticArray<BlockID>> subgraphPartitionsList = new ArrayList<>();
+            for (int i = 0; i < finalSubgraphPartitions.size(); i++) {
+                subgraphPartitionsList.add(finalSubgraphPartitions.get(i));
+            }
+
+            // Copy subgraph partitions into the main partitioned graph
+            try (var copySubgraphPartitionsTimer = Timer_km.global().startScopedTimer("Copy subgraph partitions")) {
+                pGraph = copySubgraphPartitions(pGraph, subgraphPartitionsList, kPrime, inputCtx.partition.k, finalExtraction.nodeMapping);
+            }
+
+            // Update the partition context
+            updatePartitionContext(currentPCtx, pGraph, inputCtx.partition.k);
         }
 
-        // Copy subgraph partitions into the main partitioned graph
-        pGraph = copySubgraphPartitions(pGraph, subgraphPartitionsList, kPrime, inputCtx.partition.k, finalExtraction.nodeMapping);
-
-        // Update the partition context
-        updatePartitionContext(currentPCtx, pGraph, inputCtx.partition.k);
+        return pGraph;
     }
 
-    public static void extendPartition(
+
+    public static PartitionedGraph extendPartition(
             PartitionedGraph pGraph,
             BlockID kPrime,
             Context inputCtx,
@@ -202,7 +246,10 @@ public class Helper {
         memory.resize(pGraph.n(), inputCtx.partition.k, pGraph.m(), pGraph.getGraph().nodeWeighted(), pGraph.getGraph().edgeWeighted());
 
         // Call the overloaded version of extendPartition with memory
-        extendPartition(pGraph, kPrime, inputCtx, currentPCtx, memory, extractionPool, ipMCtxPool);
+        pGraph = extendPartition(pGraph, kPrime, inputCtx, currentPCtx, memory, extractionPool, ipMCtxPool);
+
+        return pGraph;
+
     }
 
     public static boolean coarsenOnce(
@@ -211,18 +258,27 @@ public class Helper {
             Context inputCtx,
             PartitionContext currentPCtx) {
 
-        NodeWeight maxClusterWeight = PartitionUtils.computeMaxClusterWeight(inputCtx.coarsening, graph, inputCtx.partition);
-        Pair<Graph, Boolean> result = coarsener.computeCoarseGraph(maxClusterWeight, new NodeID(0));
+        try (var coarseningTimer = Timer_km.global().startScopedTimer("Coarsening")) {
+            // Calculate the maximum cluster weight
+            NodeWeight maxClusterWeight = PartitionUtils.computeMaxClusterWeight(inputCtx.coarsening, graph, inputCtx.partition);
 
-        Graph cGraph = result.getKey();
-        boolean shrunk = result.getValue();
+            // Compute the coarse graph
+            Pair<Graph, Boolean> result = coarsener.computeCoarseGraph(maxClusterWeight, new NodeID(0));
 
-        if (shrunk) {
-            currentPCtx.setup(cGraph);
+            // Extract the results
+            Graph cGraph = result.getKey();
+            boolean shrunk = result.getValue();
+
+            // If the graph was shrunk, update the partition context
+            if (shrunk) {
+                currentPCtx.setup(cGraph);
+            }
+
+            // Return whether the graph was shrunk
+            return shrunk;
         }
-
-        return shrunk;
     }
+
 
     public static BlockID computeKForN(NodeID n, Context inputCtx) {
         if (n.value < 2 * inputCtx.coarsening.contractionLimit) {

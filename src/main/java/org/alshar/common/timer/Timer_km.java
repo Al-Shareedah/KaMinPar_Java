@@ -1,9 +1,11 @@
 package org.alshar.common.timer;
+
 import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
 public class Timer_km {
     private static final boolean kDebug = false;
 
@@ -19,7 +21,7 @@ public class Timer_km {
 
     public static class TimerTreeNode {
         String name;
-        String description;
+        String description = "";
 
         int restarts = 0;
         Duration elapsed = Duration.ZERO;
@@ -29,7 +31,7 @@ public class Timer_km {
         Map<String, TimerTreeNode> childrenTbl = new HashMap<>();
         List<TimerTreeNode> children = new ArrayList<>();
 
-        String annotation;
+        String annotation = "";
 
         public String buildDisplayNameMr() {
             StringBuilder sb = new StringBuilder();
@@ -43,7 +45,7 @@ public class Timer_km {
         public String buildDisplayNameHr() {
             StringBuilder sb = new StringBuilder();
             sb.append(name);
-            if (!description.isEmpty()) {
+            if (description != null && !description.isEmpty()) {
                 sb.append(" (").append(description).append(")");
             }
             return sb.toString();
@@ -77,6 +79,7 @@ public class Timer_km {
 
     public Timer_km(String name) {
         this.name = name;
+        this.tree.root.name = name;
         this.tree.root.start = Instant.now();
     }
 
@@ -91,19 +94,14 @@ public class Timer_km {
                 return;
             }
 
-            boolean emptyDescription = description.isEmpty();
             TimerTreeNode currentNode = tree.current;
 
-            if (!emptyDescription || !currentNode.childrenTbl.containsKey(name)) {
+            if (!description.isEmpty() || !currentNode.childrenTbl.containsKey(name)) {
                 TimerTreeNode child = new TimerTreeNode();
-                if (emptyDescription) {
-                    currentNode.childrenTbl.put(name, child);
-                }
-
+                currentNode.childrenTbl.put(name, child);
                 child.parent = currentNode;
                 child.name = name;
                 child.description = description;
-
                 currentNode.children.add(child);
                 tree.current = child;
             } else {
@@ -237,9 +235,11 @@ public class Timer_km {
             String displayName = child.buildDisplayNameHr();
             out.append(prefix).append(displayName);
             printPaddedTiming(out, prefix.length() + displayName.length(), child);
-            if (!child.annotation.isEmpty()) {
+
+            if (child.annotation != null && !child.annotation.isEmpty()) {
                 out.append(" ").append(child.annotation);
             }
+
             out.append("\n");
             printChildrenHr(out, childPrefix, child, maxDepth - 1);
         }
@@ -253,14 +253,20 @@ public class Timer_km {
 
         int timeLen = String.format("%.3f", time).length();
         int restartsPaddingLength = hrMaxTimeLen - timeLen + kSpaceBetweenTimeAndRestarts;
-        int tailPaddingLength = hrMaxRestartsLen - String.valueOf(node.restarts).length();
+        int tailPaddingLength = Math.max(0, hrMaxRestartsLen - String.valueOf(node.restarts).length());
+
         out.append(String.format("%" + restartsPaddingLength + "s", ""));
         if (node.restarts > 1) {
-            out.append("(").append(String.valueOf(node.restarts)).append(")").append(String.format("%" + tailPaddingLength + "s", ""));
+            out.append("(").append(String.valueOf(node.restarts)).append(")");
+            if (tailPaddingLength > 0) {
+                out.append(String.format("%" + tailPaddingLength + "s", ""));
+            }
         } else if (hrMaxRestartsLen > 0) {
             out.append(String.format("%" + (2 + hrMaxRestartsLen) + "s", ""));
         }
     }
+
+
     public boolean isEnabled() {
         return disabled == 0;
     }
@@ -334,7 +340,7 @@ public class Timer_km {
             this(timer, name, "");
         }
 
-        public T run(java.util.function.Supplier<T> supplier) {
+        public <R> R run(java.util.function.Supplier<R> supplier) {
             ScopedTimer scopedTimer = timer.startScopedTimer(name, description);
             try {
                 return supplier.get();

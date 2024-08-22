@@ -79,6 +79,11 @@ public class Logger {
         textFormatter.print(arg.toString(), buffer);
         return this;
     }
+    public static void logTwoEmptyLines() {
+        Logger logger = new Logger();
+        logger.logText("").flush();  // Log the first empty line
+        logger.logText("").flush();  // Log the second empty line
+    }
 
     public Logger logContainer(Iterable<?> container) {
         List<String> strList = new ArrayList<>();

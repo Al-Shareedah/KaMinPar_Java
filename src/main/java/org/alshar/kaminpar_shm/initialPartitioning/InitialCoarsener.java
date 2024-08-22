@@ -98,10 +98,10 @@ public class InitialCoarsener {
         // Ensure clustering is appropriately sized
         if (clustering.size() < nodeCount) {
             // Initialize a new list with the correct size
-            clustering = new ArrayList<>(nodeCount);
+            clustering = new ArrayList<>(nodeCount + 1);
 
             // Populate the list with new Cluster instances
-            for (int i = 0; i < nodeCount; i++) {
+            for (int i = 0; i < nodeCount + 1; i++) {
                 clustering.add(new Cluster());
             }
         }
@@ -158,8 +158,8 @@ public class InitialCoarsener {
 
     public Graph coarsen(Function<NodeID, NodeWeight> cbMaxClusterWeight) {
         NodeWeight maxClusterWeight = cbMaxClusterWeight.apply(currentGraph.n());
-
-        if (/*!precomputedClustering*/ true) {
+        boolean flag = !precomputedClustering;
+        if (flag) {
             performLabelPropagation(maxClusterWeight);
         }
         NodeID c_n = new NodeID(currentGraph.n().value - currentNumMoves.value);
@@ -265,7 +265,7 @@ public class InitialCoarsener {
         }
 
         // Reset or initialize edgeWeightCollector mapping
-        if (edgeWeightCollector.size() == 0) {
+        if (edgeWeightCollector.capacity() == 0) {
             // If size is zero, set the size to currentGraph.n().value
             edgeWeightCollector = new FastResetArray<>(n.value);
             for (int i = 0; i < n.value; i++) {
@@ -315,15 +315,20 @@ public class InitialCoarsener {
         for (NodeID u = new NodeID(0); u.value < n.value; u = u.add(1)) {
             NodeID leader = clustering.get(u.value).leader;
 
+            // Check if the leader has already been mapped to a coarse node
             if (leaderNodeMapping.get(leader.value).value == 0) {
+                // If not, map it to the next available coarse node
                 cNodeWeights.set(currentNode.value, clustering.get(leader.value).weight);
                 currentNode = currentNode.add(1);
-                NodeID currentNodeValue = new NodeID(currentNode.value);
-                leaderNodeMapping.set(leader.value, currentNodeValue);  // 1-based index
-
+                // Store the 1-based index for this leader
+                leaderNodeMapping.set(leader.value, currentNode);
             }
-            NodeID cluster = leaderNodeMapping.get(leader.value).subtract(1);  // Convert to 0-based index
+
+            // Convert the stored 1-based index back to 0-based index for cluster assignment
+            NodeID cluster = leaderNodeMapping.get(leader.value).subtract(1);
             nodeMapping.set(u.value, cluster);
+
+            // Increment the size of the cluster (number of nodes contracted into the coarse node)
             clusterSizes.set(cluster.value, clusterSizes.get(cluster.value).add(1));
         }
 
@@ -416,10 +421,10 @@ public class InitialCoarsener {
         if (!interleavedLocked) {
             NodeID bestCluster = pickClusterFromRatingMap(cU, cUWeight, interleavedMaxClusterWeight);
             if (!bestCluster.equals(cU)) {
+                currentNumMoves = currentNumMoves.add(1);
                 clustering.get(cU.value).leader = bestCluster;
                 clustering.get(bestCluster.value).weight = clustering.get(bestCluster.value).weight.add(cUWeight);
                 clustering.get(bestCluster.value).locked = true;
-                currentNumMoves = currentNumMoves.add(1);
             }
         }
         interleavedLocked = clustering.get(cU.value + 1).locked;
@@ -427,9 +432,14 @@ public class InitialCoarsener {
 
     private void interleavedVisitNeighbor(NodeID cU, NodeID cV, EdgeWeight weight) {
         if (!interleavedLocked) {
-            ratingMap.set(cV.value, ratingMap.get(cV.value).add(weight));
+            // Access the leader from the clustering for cV
+            NodeID leader = clustering.get(cV.value).leader;
+
+            // Update the rating map for the leader
+            ratingMap.set(leader.value, ratingMap.get(leader.value).add(weight));
         }
     }
+
 
 
     private void performLabelPropagation(NodeWeight maxClusterWeight) {
@@ -504,7 +514,7 @@ public class InitialCoarsener {
             // Accumulate edge weights for the cluster leader
             ratingMap.set(leader.value, ratingMap.get(leader.value).add(currentGraph.edgeWeight(edge.getEdgeID())));
         }
-
+        int usedEntries_size = ratingMap.size();
         // Pick the best cluster based on the accumulated rating map
         return pickClusterFromRatingMap(u, uWeight, maxClusterWeight);
     }
@@ -532,7 +542,7 @@ public class InitialCoarsener {
         }
 
         // Clear the rating map after processing
-        ratingMap.clear();
+        ratingMap.clearUsedEntries();
 
         return bestCluster;
     }

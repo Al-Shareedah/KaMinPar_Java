@@ -183,11 +183,11 @@ public class PoolBipartitioner {
     }
 
     private void runBipartitioner(int i) {
-        Logger.log("Running bipartitioner " + bipartitionerNames.get(i) + " on graph with n=" + graph.n().value + " m=" + graph.m().value);
+        //Logger.log("Running bipartitioner " + bipartitionerNames.get(i) + " on graph with n=" + graph.n().value + " m=" + graph.m().value);
         PartitionedGraph pGraph = bipartitioners.get(i).bipartition(currentPartition);
-        Logger.log(" -> running refiner ...");
+        //Logger.log(" -> running refiner ...");
         refiner.refine(pGraph, pCtx);
-        Logger.log(" -> cut=" + Metrics.edgeCut(pGraph).value + " imbalance=" + Metrics.imbalance(pGraph));
+        //Logger.log(" -> cut=" + Metrics.edgeCut(pGraph).value + " imbalance=" + Metrics.imbalance(pGraph));
 
         EdgeWeight currentCut = Metrics.edgeCutSeq(pGraph);
         double currentImbalance = Metrics.imbalance(pGraph);

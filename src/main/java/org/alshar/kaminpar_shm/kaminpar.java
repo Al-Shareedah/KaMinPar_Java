@@ -164,6 +164,7 @@ public class kaminpar {
                 NodeID numIsolatedNodes = Permutator.integrateIsolatedNodes(graph, originalEpsilon, ctx);
                 pGraphWrapper.pGraph = Permutator.assignIsolatedNodes(pGraphWrapper.pGraph, numIsolatedNodes, ctx.partition);
             }
+            // Stop the Partitioning timer
             Timer_km.global().stopTimer();
 
             Timer_km.global().startTimer("IO");
@@ -195,7 +196,8 @@ public class kaminpar {
 
             EdgeWeight finalCut = Metrics.edgeCut(pGraphWrapper.pGraph);
 
-            resetGlobalTimer();
+            // Reset the global timer
+            Timer_km.global().reset();
 
             return finalCut;
         }
@@ -225,10 +227,10 @@ public class kaminpar {
             }
             Logger.log("");
             Logger.log("Partition summary:");
-            if (pGraph.k() != ctx.partition.k) {
-                Logger.log(Logger.RED + "  Number of blocks: " + pGraph.k());
+            if (pGraph.k().value != ctx.partition.k.value) {
+                Logger.log(Logger.RED + "  Number of blocks: " + pGraph.k().value);
             } else {
-                Logger.log("  Number of blocks: " + pGraph.k());
+                Logger.log("  Number of blocks: " + pGraph.k().value);
             }
             Logger.log("  Edge cut:         " + cut.value);
             Logger.log("  Imbalance:        " + imbalance);

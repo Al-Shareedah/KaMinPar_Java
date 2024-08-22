@@ -87,6 +87,7 @@ public class KaMinPar {
         args = defaultArgs;
         ApplicationContext app = new ApplicationContext();
         Context ctx = createDefaultContext();
+        ctx.debug.graphName = app.graphFilename;
         ContextWrapper contextWrapper = new ContextWrapper(ctx);
         PresetCommand presetCmd = new PresetCommand(contextWrapper);
 

@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.alshar.Graph;
 import org.alshar.common.GraphUtils.*;
 import org.alshar.common.datastructures.*;
+import org.alshar.common.timer.Timer_km;
 
 public class Contraction {
 
@@ -50,85 +51,111 @@ public class Contraction {
         StaticArray<NavigationMarker<Integer, Edge>> allBufferedNodes = mCtx.allBufferedNodes;
 
         int n = graph.n().value;
-
+        int c_n;
         // Allocate memory for mapping
         StaticArray<Integer> mapping = new StaticArray<>(n);
-        resizeIfNeeded(leaderMapping, n);
-        resizeIfNeeded(buckets, n);
 
-        // Step 1: Set node_mapping[x] = 1 if there is a cluster with leader x
-        for (int u = 0; u < n; u++) {
-            leaderMapping.get(u).set(0);
-        }
-        for (int u = 0; u < n; u++) {
-            leaderMapping.get(clustering.get(u)).set(1);
+        try (var allocationTimer = Timer_km.global().startScopedTimer("Allocation")) {
+            resizeIfNeeded(leaderMapping, n);
+            resizeIfNeeded(buckets, n);
         }
 
-        // Step 2: Compute prefix sum to get coarse node IDs
-        prefixSum(leaderMapping, n);
-        int c_n = leaderMapping.get(n - 1).get();  // Number of nodes in the coarse graph
+        // Preprocessing phase
+        try (var preprocessingTimer = Timer_km.global().startScopedTimer("Preprocessing")) {
+            // Step 1: Set node_mapping[x] = 1 if there is a cluster with leader x
+            for (int u = 0; u < n; u++) {
+                leaderMapping.get(u).set(0);
+            }
+            for (int u = 0; u < n; u++) {
+                leaderMapping.get(clustering.get(u)).set(1);
+            }
 
-        // Step 3: Assign coarse node ID to all nodes
-        for (int u = 0; u < n; u++) {
-            mapping.set(u, leaderMapping.get(clustering.get(u)).get() - 1);
+
+            // Step 2: Compute prefix sum to get coarse node IDs
+            prefixSum(leaderMapping, n);
+            c_n = leaderMapping.get(n - 1).get();  // Number of nodes in the coarse graph
+
+            // Step 3: Assign coarse node ID to all nodes
+            for (int u = 0; u < n; u++) {
+                mapping.set(u, leaderMapping.get(clustering.get(u)).get() - 1);
+            }
         }
 
-        // Prepare bucketsIndex
-        for (int i = 0; i < c_n + 1; i++) {
-            bucketsIndex.set(i, new AtomicInteger(0));
+        // Allocation phase for buckets
+        try (var allocationTimer = Timer_km.global().startScopedTimer("Allocation")) {
+            // Prepare bucketsIndex
+            for (int i = 0; i < c_n + 1; i++) {
+                bucketsIndex.set(i, new AtomicInteger(0));
+            }
+            resizeIfNeeded(bucketsIndex, c_n + 1);
         }
-        resizeIfNeeded(bucketsIndex, c_n + 1);
 
-        // Count the number of nodes in each bucket
-        for (int u = 0; u < n; u++) {
-            bucketsIndex.get(mapping.get(u)).incrementAndGet();
-        }
-        prefixSum(bucketsIndex, bucketsIndex.size());
+        // Preprocessing phase for buckets
+        try (var preprocessingTimer = Timer_km.global().startScopedTimer("Preprocessing")) {
+            // Count the number of nodes in each bucket
+            for (int u = 0; u < n; u++) {
+                bucketsIndex.get(mapping.get(u)).incrementAndGet();
+            }
+            prefixSum(bucketsIndex, bucketsIndex.size());
 
-        // Sort nodes into buckets
-        for (int u = 0; u < n; u++) {
-            int pos = bucketsIndex.get(mapping.get(u)).decrementAndGet();
-            buckets.set(pos, u);
+            // Sort nodes into buckets
+            for (int u = 0; u < n; u++) {
+                int pos = bucketsIndex.get(mapping.get(u)).decrementAndGet();
+                buckets.set(pos, u);
+            }
         }
 
         // Build nodes array of the coarse graph
         StaticArray<EdgeID> cNodes = new StaticArray<>(c_n + 1);
-        for (int i = 0; i < cNodes.size(); i++) {
-            cNodes.set(i, new EdgeID(0)); // Initialize each element to EdgeID(0)
-        }
         StaticArray<NodeWeight> cNodeWeights = new StaticArray<>(c_n);
-        for (int i = 0; i < cNodeWeights.size(); i++) {
-            cNodeWeights.set(i, new NodeWeight(1)); // Initialize each element to a weight of 1
-        }
         // Initialize NavigableLinkedList for each node
         List<NavigableLinkedList<Integer, Edge>> edgeBufferLists = new ArrayList<>(c_n);
-        for (int i = 0; i < c_n; i++) {
-            edgeBufferLists.add(new NavigableLinkedList<>());
+        try (var allocationTimer = Timer_km.global().startScopedTimer("Allocation")) {
+            for (int i = 0; i < cNodes.size(); i++) {
+                cNodes.set(i, new EdgeID(0)); // Initialize each element to EdgeID(0)
+            }
+            for (int i = 0; i < cNodeWeights.size(); i++) {
+                cNodeWeights.set(i, new NodeWeight(1)); // Initialize each element to a weight of 1
+            }
         }
 
-        buildCoarseGraphNodes(graph, cNodes, cNodeWeights, mapping, buckets, bucketsIndex, edgeBufferLists, c_n);
+        // Construct coarse edges
+        try (var constructEdgesTimer = Timer_km.global().startScopedTimer("Construct coarse edges")) {
+            for (int i = 0; i < c_n; i++) {
+                edgeBufferLists.add(new NavigableLinkedList<>());
+            }
+            buildCoarseGraphNodes(graph, cNodes, cNodeWeights, mapping, buckets, bucketsIndex, edgeBufferLists, c_n);
 
-        // Combine all buffered nodes
-        List<NavigationMarker<Integer, Edge>> combinedMarkers = TsNavigableList.combine(edgeBufferLists);
-        mCtx.allBufferedNodes = new StaticArray<>(combinedMarkers.size());
-        for (int i = 0; i < combinedMarkers.size(); i++) {
-            mCtx.allBufferedNodes.set(i, combinedMarkers.get(i));
+            // Combine all buffered nodes
+            List<NavigationMarker<Integer, Edge>> combinedMarkers = TsNavigableList.combine(edgeBufferLists);
+            mCtx.allBufferedNodes = new StaticArray<>(combinedMarkers.size());
+            for (int i = 0; i < combinedMarkers.size(); i++) {
+                mCtx.allBufferedNodes.set(i, combinedMarkers.get(i));
+            }
         }
 
         // Construct coarse graph
+
         // Get the number of edges in the coarse graph from the last element of cNodes
         int numberOfEdges = cNodes.get(cNodes.size() - 1).value;
-
         // Initialize cEdges with the correct number of edges
         StaticArray<NodeID> cEdges = new StaticArray<>(numberOfEdges);
-        for (int i = 0; i < cEdges.size(); i++) {
-            cEdges.set(i, new NodeID(0)); // Set each element to NodeID initialized with 0
-        }
         StaticArray<EdgeWeight> cEdgeWeights = new StaticArray<>(numberOfEdges);
-        for (int i = 0; i < cEdgeWeights.size(); i++) {
-            cEdgeWeights.set(i, new EdgeWeight(1)); // Set each element to EdgeWeight initialized with 1
+        try (var allocationTimer = Timer_km.global().startScopedTimer("Allocation")) {
+
+            for (int i = 0; i < cEdges.size(); i++) {
+                cEdges.set(i, new NodeID(0)); // Set each element to NodeID initialized with 0
+            }
+
+            for (int i = 0; i < cEdgeWeights.size(); i++) {
+                cEdgeWeights.set(i, new EdgeWeight(1)); // Set each element to EdgeWeight initialized with 1
+            }
         }
-        constructCoarseGraph(cEdges, cEdgeWeights, cNodes, mCtx.allBufferedNodes);
+
+        // Construct the coarse graph
+        try (var constructGraphTimer = Timer_km.global().startScopedTimer("Construct coarse graph")) {
+            constructCoarseGraph(cEdges, cEdgeWeights, cNodes, mCtx.allBufferedNodes);
+        }
 
         // Return the new coarse graph and the mapping
         Graph coarseGraph = new Graph(cNodes, cEdges, cNodeWeights, cEdgeWeights, false);
