@@ -62,7 +62,7 @@ public class KaMinPar {
         String rearrangeBy = "natural";
 
         @Parameter(names = {"--c-contraction-limit"}, description = "Upper limit for the number of nodes per block in the coarsest graph.")
-        int contractionLimit = 113;
+        int contractionLimit = 1068;
 
         private final ContextWrapper contextWrapper;
 
@@ -78,7 +78,7 @@ public class KaMinPar {
     public static void main(String[] args) {
         // Main application arguments
         String[] defaultArgs = {
-                "-G", "email.graph",
+                "-G", "PGPgiantcompo.graph",
                 "-k", "4",
                 "-t", "1",
                 "preset", "-P", "default"
