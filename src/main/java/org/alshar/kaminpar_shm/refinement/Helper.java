@@ -77,9 +77,13 @@ public class Helper {
         if (k.value <= 1) {
             throw new IllegalArgumentException("Block count k must be greater than 1.");
         }
+        PartitionedGraph pGraph;
 
-        // Perform the initial bipartition of the graph
-        PartitionedGraph pGraph = bipartition(graph, finalK, inputCtx, ipMCtxPool);
+        // Start a timer for the bipartition process
+        try (var bipartitionTimer = Timer_km.global().startScopedTimer("Extend Partition")) {
+            // Perform the initial bipartition of the graph
+            pGraph = bipartition(graph, finalK, inputCtx, ipMCtxPool);
+        }
 
         // Split k and finalK into two parts
         BlockID[] finalKs = splitIntegral(finalK);

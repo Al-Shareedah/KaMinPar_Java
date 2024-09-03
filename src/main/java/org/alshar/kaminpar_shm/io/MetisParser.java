@@ -45,7 +45,7 @@ public class MetisParser {
             long nodeWeight = format.hasNodeWeights ? toker.scanUInt() : 1;
             nodeCallback.accept(nodeWeight);
 
-            while (Character.isDigit(toker.current())) {
+            while (toker.validPosition() && Character.isDigit(toker.current())) {
                 long v = toker.scanUInt() - 1;
                 long edgeWeight = format.hasEdgeWeights ? toker.scanUInt() : 1;
                 edgeCallback.accept(edgeWeight, v);

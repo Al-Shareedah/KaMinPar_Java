@@ -33,7 +33,7 @@ public class KaMinPar {
         int numThreads = 1;
 
         @Parameter(names = {"--max-timer-depth"}, description = "Set maximum timer depth shown in result summary.")
-        int maxTimerDepth = 3;
+        int maxTimerDepth = 4;
 
         @Parameter(names = {"-k", "--k"}, description = "Number of blocks in the partition.", required = true)
         int k = 4;
@@ -48,7 +48,7 @@ public class KaMinPar {
         boolean validate = false;
 
         @Parameter(names = {"-G", "--graph"}, description = "Input graph in METIS format.", required = true)
-        String graphFilename = "PGPgiantcompo.graph";
+        String graphFilename = "4elt.graph";
 
         @Parameter(names = {"-o", "--output"}, description = "Output filename for the graph partition.")
         String partitionFilename = "";
@@ -62,7 +62,7 @@ public class KaMinPar {
         String rearrangeBy = "natural";
 
         @Parameter(names = {"--c-contraction-limit"}, description = "Upper limit for the number of nodes per block in the coarsest graph.")
-        int contractionLimit = 1068;
+        int contractionLimit = 113;
 
         private final ContextWrapper contextWrapper;
 
@@ -78,7 +78,7 @@ public class KaMinPar {
     public static void main(String[] args) {
         // Main application arguments
         String[] defaultArgs = {
-                "-G", "PGPgiantcompo.graph",
+                "-G", "email.graph",
                 "-k", "4",
                 "-t", "1",
                 "preset", "-P", "default"

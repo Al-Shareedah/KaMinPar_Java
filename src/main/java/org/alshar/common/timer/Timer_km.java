@@ -247,7 +247,10 @@ public class Timer_km {
 
     private void printPaddedTiming(Appendable out, int startCol, TimerTreeNode node) throws Exception {
         int timePaddingLen = hrTimeCol - startCol - kNameDel.length();
-        String timePadding = timePaddingLen > 0 ? String.format("%" + (timePaddingLen - 1) + "s ", kPadding) : "";
+
+        // Ensure the padding length is at least 1 before formatting
+        String timePadding = timePaddingLen > 1 ? String.format("%" + (timePaddingLen - 1) + "s ", kPadding) : "";
+
         double time = node.seconds();
         out.append(kNameDel).append(timePadding).append(String.format("%.3f", time)).append(kSecondsUnit);
 
@@ -265,6 +268,7 @@ public class Timer_km {
             out.append(String.format("%" + (2 + hrMaxRestartsLen) + "s", ""));
         }
     }
+
 
 
     public boolean isEnabled() {

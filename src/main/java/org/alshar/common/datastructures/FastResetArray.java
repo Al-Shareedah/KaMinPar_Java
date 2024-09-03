@@ -1,6 +1,7 @@
 package org.alshar.common.datastructures;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class FastResetArray<T> {
@@ -81,6 +82,12 @@ public class FastResetArray<T> {
     }
 
 
+    public void clear2() {
+        // Only clear the used entries instead of the entire data list
+        data = new ArrayList<>(Collections.nCopies(data.size(), (T) new EdgeWeight(0)));
+        usedEntries.clear();  // Clear the list of used entries
+    }
+
 
     // Check if there are any used entries
     public boolean isEmpty() {
@@ -108,6 +115,15 @@ public class FastResetArray<T> {
             for (int i = oldSize - 1; i >= capacity; i--) {
                 data.remove(i);
             }
+        }
+    }
+
+    public void resize2(int newSize) {
+        if (newSize > data.size()) {
+            // Extend the list with new EdgeWeight(0) objects
+            data.addAll(Collections.nCopies(newSize - data.size(), (T) new EdgeWeight(0)));
+        } else if (newSize < data.size()) {
+            data.subList(newSize, data.size()).clear();
         }
     }
 

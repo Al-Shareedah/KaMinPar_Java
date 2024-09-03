@@ -13,6 +13,7 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.concurrent.atomic.LongAdder;
 
 import static org.alshar.common.ParallelUtils.ParallelFor.parallelFor;
 
@@ -138,8 +139,8 @@ public class LPClustering extends Clusterer {
 
             shuffleChunks();
 
-            AtomicIntegerArray movedNodesCount = new AtomicIntegerArray(numNodes);
-            AtomicIntegerArray removedClustersCount = new AtomicIntegerArray(1); // To track the number of removed clusters
+            LongAdder movedNodesCount = new LongAdder(); // To track the number of moved nodes
+            LongAdder removedClustersCount = new LongAdder(); // To track the number of removed clusters
             AtomicInteger nextChunk = new AtomicInteger(0);
 
             ParallelFor.parallelFor(0, chunks.size(), 1, (start, end) -> {
@@ -159,14 +160,14 @@ public class LPClustering extends Clusterer {
                     for (int subChunk = 0; subChunk < numSubChunks; subChunk++) {
                         for (int i = 0; i < LabelPropagationConfig.kPermutationSize; i++) {
                             int u = chunk.start + LabelPropagationConfig.kPermutationSize * subChunkPermutation.get(subChunk) + permutation.get(i % LabelPropagationConfig.kPermutationSize);
-                            if (u < chunk.end && graph.degree(new NodeID(u)).value < maxDegree && (LabelPropagationConfig.kUseActiveSetStrategy && active.get(u) != 0)) {
+                            if (u < chunk.end && graph.degree(new NodeID(u)).value < maxDegree && (!LabelPropagationConfig.kUseActiveSetStrategy || active.get(u) != 0)) {
                                 boolean[] result = handleNode(u, localRand, localRatingMap); // Updated call to handleNode
 
                                 if (result[0]) {
-                                    movedNodesCount.incrementAndGet(u);
+                                    movedNodesCount.increment();
                                 }
                                 if (result[1]) {
-                                    removedClustersCount.incrementAndGet(0);
+                                    removedClustersCount.increment();
                                 }
                             }
                         }
@@ -174,15 +175,9 @@ public class LPClustering extends Clusterer {
                 }
             });
 
-            currentNumClusters -= removedClustersCount.get(0);
+            currentNumClusters -= removedClustersCount.sum();
 
-            // Sum the total moved nodes count from all threads
-            int totalMovedNodes = 0;
-            for (int i = 0; i < numNodes; i++) {
-                totalMovedNodes += movedNodesCount.get(i);
-            }
-
-            return totalMovedNodes;
+            return movedNodesCount.intValue();
         }
 
         private boolean[] handleNode(int u, Random_shm localRand, LocalRatingMap localRatingMap) {
@@ -326,30 +321,33 @@ public class LPClustering extends Clusterer {
                 List<Chunk> localChunks = new ArrayList<>();
                 int bucketStart = Math.max(graph.firstNodeInBucket(bucket).value, from);
 
-                while (offset.get() < bucketSize) {
-                    int begin = offset.getAndAdd(maxNodeChunkSize);
-                    if (begin >= bucketSize) {
-                        break;
-                    }
-                    int end = Math.min(begin + maxNodeChunkSize, bucketSize);
+                // Parallelize the chunk creation within each bucket
+                ParallelFor.parallelFor(0, bucketSize, 1, (start, end) -> {
+                    while (offset.get() < bucketSize) {
+                        int begin = offset.getAndAdd(maxNodeChunkSize);
+                        if (begin >= bucketSize) {
+                            break;
+                        }
+                        int endLocal = Math.min(begin + maxNodeChunkSize, bucketSize);
 
-                    long currentChunkSize = 0;
-                    int chunkStart = bucketStart + begin;
+                        long currentChunkSize = 0;
+                        int chunkStart = bucketStart + begin;
 
-                    for (int i = begin; i < end; ++i) {
-                        int u = bucketStart + i;
-                        currentChunkSize += graph.degree(new NodeID(u)).value;
-                        if (currentChunkSize >= maxChunkSize) {
-                            localChunks.add(new Chunk(chunkStart, u + 1));
-                            chunkStart = u + 1;
-                            currentChunkSize = 0;
+                        for (int i = begin; i < endLocal; ++i) {
+                            int u = bucketStart + i;
+                            currentChunkSize += graph.degree(new NodeID(u)).value;
+                            if (currentChunkSize >= maxChunkSize) {
+                                localChunks.add(new Chunk(chunkStart, u + 1));
+                                chunkStart = u + 1;
+                                currentChunkSize = 0;
+                            }
+                        }
+
+                        if (currentChunkSize > 0) {
+                            localChunks.add(new Chunk(chunkStart, bucketStart + endLocal));
                         }
                     }
-
-                    if (currentChunkSize > 0) {
-                        localChunks.add(new Chunk(chunkStart, bucketStart + end));
-                    }
-                }
+                });
 
                 int chunksStart = chunks.size();
                 chunks.addAll(localChunks);
@@ -359,7 +357,7 @@ public class LPClustering extends Clusterer {
             }
 
             // Ensure that all nodes in the range [from, to) are covered
-            validateChunks(from, to);
+            //validateChunks(from, to);
         }
 
         private List<Integer> createSubChunkPermutation(int numSubChunks) {

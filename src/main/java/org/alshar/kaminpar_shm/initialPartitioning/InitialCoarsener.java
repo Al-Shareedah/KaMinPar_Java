@@ -10,6 +10,7 @@ import org.alshar.common.Math.Random_shm;
 import org.alshar.common.Math.Random_shm.RandomPermutations;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -247,67 +248,41 @@ public class InitialCoarsener {
         StaticArray<NodeID> cEdges = new StaticArray<>(currentGraph.m().value);  // Overestimated size
         StaticArray<EdgeWeight> cEdgeWeights = new StaticArray<>(currentGraph.m().value);  // Overestimated size
 
-        List<NodeID> nodeMapping = new ArrayList<>(n.value);
+        List<NodeID> nodeMapping = new ArrayList<>(Collections.nCopies(n.value, new NodeID(0)));
 
 
 
 
 
-        // Initialize mappings and clustering
-        for (int i = 0; i < n.value; i++) {
-            nodeMapping.add(new NodeID(0));
-        }
-        for (int i = 0; i < cN.value + 1; i++) {
-            cNodes.set(i, new NodeID(0));
-        }
+        // Combined initialization for cNodes and cNodeWeights
         for (int i = 0; i < cN.value; i++) {
+            cNodes.set(i, new NodeID(0));
             cNodeWeights.set(i, new NodeWeight(0));
         }
+        cNodes.set(cN.value, new NodeID(0)); // Setting the last element of cNodes separately
 
         // Reset or initialize edgeWeightCollector mapping
         if (edgeWeightCollector.capacity() == 0) {
-            // If size is zero, set the size to currentGraph.n().value
             edgeWeightCollector = new FastResetArray<>(n.value);
-            for (int i = 0; i < n.value; i++) {
-                edgeWeightCollector.set(i, new EdgeWeight(0));
-            }
-            edgeWeightCollector.clear();
-        } else {
-            // If size is not zero, reset every element to 0
-            edgeWeightCollector.clear();
         }
+        edgeWeightCollector.clear2();
 
         // Reset or initialize cluster sizes and leader node mapping
-        if (clusterSizes.size() == 0) {
-            // If size is zero, set the size to currentGraph.n().value
-            clusterSizes = new ArrayList<>(n.value);
-            for (int i = 0; i < n.value; i++) {
-                clusterSizes.add(new NodeID(0));
-            }
+        if (clusterSizes.isEmpty()) {
+            clusterSizes = new ArrayList<>(Collections.nCopies(n.value, new NodeID(0)));
         } else {
-            // If size is not zero, reset every element to 0
-            for (int i = 0; i < clusterSizes.size(); i++) {
-                clusterSizes.set(i, new NodeID(0));
-            }
+            Collections.fill(clusterSizes, new NodeID(0));
         }
 
-        // Handle leaderNodeMapping initialization or resetting
-        if (leaderNodeMapping.size() == 0) {
-            leaderNodeMapping = new ArrayList<>(n.value);
-            for (int i = 0; i < n.value; i++) {
-                leaderNodeMapping.add(new NodeID(0));
-            }
+        if (leaderNodeMapping.isEmpty()) {
+            leaderNodeMapping = new ArrayList<>(Collections.nCopies(n.value, new NodeID(0)));
         } else {
-            for (int i = 0; i < leaderNodeMapping.size(); i++) {
-                leaderNodeMapping.set(i, new NodeID(0));
-            }
+            Collections.fill(leaderNodeMapping, new NodeID(0));
         }
 
-        if (clusterNodes.size() == 0) {
-            clusterNodes = new ArrayList<>(n.value);
-            for (int i = 0; i < n.value; i++) {
-                clusterNodes.add(new NodeID(0));
-            }
+        // Initialize clusterNodes only if it's empty
+        if (clusterNodes.isEmpty()) {
+            clusterNodes = new ArrayList<>(Collections.nCopies(n.value, new NodeID(0)));
         }
 
         // Step 1: Build node mapping and cluster sizes
@@ -399,7 +374,7 @@ public class InitialCoarsener {
         }
         NodeID cMValue = new NodeID(cM.value);
         cNodes.set(cU.value + 1, cMValue);
-        edgeWeightCollector.clear();
+        edgeWeightCollector.clear2();
 
         // Restrict cEdges and cEdgeWeights to actual size
         cEdges.resize(cM.value);
@@ -500,12 +475,12 @@ public class InitialCoarsener {
         // Resize the ratingMap to match the number of nodes in the current graph
         if(ratingMap.capacity() != currentGraph.n().value
                 && !isSet){
-            ratingMap.resize(currentGraph.n().value);
+            ratingMap.resize2(currentGraph.n().value);
             isSet=true;
         }
 
         // Ensure the ratingMap is clear before starting
-        ratingMap.clear();
+        ratingMap.clear2();
 
         // Iterate over neighbors of u and update the rating map based on clustering
         for (Edge edge : currentGraph.neighbors(u)) {
