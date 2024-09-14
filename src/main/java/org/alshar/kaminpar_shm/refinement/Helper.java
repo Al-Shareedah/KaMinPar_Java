@@ -90,19 +90,16 @@ public class Helper {
         BlockID[] ks = splitIntegral(k);
         BlockID[] b = new BlockID[]{b0, b0.add(ks[0])};
 
-        // Initialize the partition array with all BlockID(0) values
-        for (int i = 0; i < partition.size(); i++) {
-            partition.set(i, new BlockID(0));
-        }
-
 
         // Update the partition to reflect the bipartition
+        int node = 0;
         for (int i = 0; i < partition.size(); i++) {
             BlockID block = partition.get(i);
 
-            // Check for null before comparing
-            if (block != null && block.equals(b0)) {
-                partition.set(i, b[pGraph.block(new NodeID(i)).value]);
+            // Check for block matching b0 and ensure node is within bounds
+            if (block != null && block.equals(b0) && node < pGraph.n().value) {
+                partition.set(i, b[pGraph.block(new NodeID(node)).value]);
+                node++;
             } else if (block == null) {
                 // Handle the case where the block is null (optional, depending on your logic)
                 System.out.println("Warning: Encountered null block at position " + i);
@@ -110,8 +107,8 @@ public class Helper {
         }
 
         // Ensure that all nodes have been processed
-        int processedNodes = pGraph.n().value;
-        if (processedNodes != partition.size()) {
+        int processedNodes = node;
+        if (processedNodes != pGraph.n().value) {
             throw new IllegalStateException("Mismatch in the number of processed nodes and partition size.");
         }
 
@@ -188,6 +185,14 @@ public class Helper {
             final Context finalInputCtx = inputCtx;
             final SubgraphExtractionResult finalExtraction = extraction;
             int currentK = pGraph.k().value;
+
+            // Initialize each partition in finalSubgraphPartitions to BlockID(0)
+            for (int i = 0; i < finalSubgraphPartitions.size(); i++) {
+                StaticArray<BlockID> subgraphPartition = finalSubgraphPartitions.get(i);
+                for (int j = 0; j < subgraphPartition.size(); j++) {
+                    subgraphPartition.set(j, new BlockID(0)); // Initialize to BlockID(0)
+                }
+            }
 
             // Parallel bipartitioning of subgraphs
             try (var bipartitioningTimer = Timer_km.global().startScopedTimer("Bipartitioning")) {

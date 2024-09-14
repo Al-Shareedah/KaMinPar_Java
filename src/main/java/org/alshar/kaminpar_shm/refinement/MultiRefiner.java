@@ -24,6 +24,7 @@ public class MultiRefiner extends Refiner {
     @Override
     public boolean refine(PartitionedGraph pGraph, PartitionContext pCtx) {
         boolean foundImprovement = false;
+
         for (RefinementAlgorithm algorithm : order) {
             Refiner refiner = refiners.get(algorithm);
             if (refiner != null) {
@@ -31,6 +32,9 @@ public class MultiRefiner extends Refiner {
                 foundImprovement |= refiner.refine(pGraph, pCtx);
             }
         }
+
+
+
         return foundImprovement;
     }
 }

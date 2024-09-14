@@ -72,7 +72,7 @@ public class Presets {
         ctx.coarsening.lp.isolatedNodesStrategy = IsolatedNodesClusteringStrategy.KEEP;
 
         // Additional Coarsening Settings
-        ctx.coarsening.contractionLimit = 1068;
+        ctx.coarsening.contractionLimit = 2341;
         ctx.coarsening.enforceContractionLimit = false;
         ctx.coarsening.convergenceThreshold = 0.05;
         ctx.coarsening.clusterWeightLimit = ClusterWeightLimit.EPSILON_BLOCK_WEIGHT;

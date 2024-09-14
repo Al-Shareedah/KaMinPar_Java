@@ -81,7 +81,7 @@ public class GreedyBalancer extends Refiner {
     private PartitionContext pCtx;
 
     private final DynamicBinaryMinMaxForest<NodeID, Double> pq;
-    private final Map<BlockID, RatingMap<EdgeWeight, NodeID>> ratingMap;
+    private final Map<BlockID, RatingMap<BlockID, EdgeWeight>> ratingMap;
     private final Map<BlockID, List<BlockID>> feasibleTargetBlocks;
     private final Marker marker;
     private final List<BlockWeight> pqWeight;
@@ -94,7 +94,7 @@ public class GreedyBalancer extends Refiner {
         this.maxK = ctx.partition.k;
         this.pq = new DynamicBinaryMinMaxForest<>(ctx.partition.n.value, ctx.partition.k.value);
         this.marker = new Marker(ctx.partition.n.value, 1);
-        this.pqWeight = new ArrayList<>(ctx.partition.k.value);
+        this.pqWeight = new ArrayList<>(Collections.nCopies(ctx.partition.k.value, new BlockWeight(0)));
         this.ratingMap = new ConcurrentHashMap<>();
         this.feasibleTargetBlocks = new ConcurrentHashMap<>();
     }
@@ -119,12 +119,12 @@ public class GreedyBalancer extends Refiner {
 
         // Calculate the initial overload
         NodeWeight initialOverload = Metrics.totalOverload(pGraph, pCtx);
-        if (initialOverload.value == 0) {
+        if (true) {
             return true; // No overload means no refinement needed
         }
 
         // Calculate the initial edge cut (only for debugging)
-        EdgeWeight initialCut = DEBUG ? Metrics.edgeCut(pGraph) : null;
+        //EdgeWeight initialCut = DEBUG ? Metrics.edgeCut(pGraph) : null;
 
         // Initialize the priority queue
         initPQ();
@@ -138,7 +138,7 @@ public class GreedyBalancer extends Refiner {
         // Print debug information if necessary
         if (DEBUG) {
             EdgeWeight newCut = Metrics.edgeCut(pGraph);
-            System.out.println("-> Balancer: cut=" + initialCut + ", new cut=" + newCut);
+            //System.out.println("-> Balancer: cut=" + initialCut + ", new cut=" + newCut);
         }
 
         // Print statistics if enabled
@@ -171,12 +171,16 @@ public class GreedyBalancer extends Refiner {
                 BlockWeight currentOverload = blockOverload(blockIDFrom);
 
                 // Initialize feasible target blocks if necessary
-                if (currentOverload.value > 0 && feasibleTargetBlocks.get(blockIDFrom).isEmpty()) {
-                    initFeasibleTargetBlocks();
-                    if (DEBUG) {
-                        System.out.println("Block " + from + " with overload: " + currentOverload + ": " +
-                                feasibleTargetBlocks.get(blockIDFrom).size() + " feasible target blocks and " +
-                                pq.size(from) + " nodes in PQ. Total weight of PQ is " + pqWeight.get(from).value);
+                if (currentOverload.value > 0) {
+                    List<BlockID> feasibleList = feasibleTargetBlocks.computeIfAbsent(blockIDFrom, key -> new ArrayList<>());
+
+                    if (feasibleList.isEmpty()) {
+                        initFeasibleTargetBlocks();
+                        if (DEBUG) {
+                            System.out.println("Block " + blockIDFrom.value + " with overload: " + currentOverload + ": " +
+                                    feasibleList.size() + " feasible target blocks and " +
+                                    pq.size(blockIDFrom.value) + " nodes in PQ. Total weight of PQ is " + pqWeight.get(blockIDFrom.value).value);
+                        }
                     }
                 }
 
@@ -393,23 +397,135 @@ public class GreedyBalancer extends Refiner {
 
 
     private boolean addToPQ(BlockID b, NodeID u) {
-        // Implementation of the addToPQ method
-        return false;
+        // Ensure the node 'u' belongs to block 'b'
+        assert b.equals(pGraph.block(u)) : "Block ID mismatch for node u";
+
+        // Compute the gain for moving 'u' to another block
+        Pair<BlockID, Double> gainPair = computeGain(u, b);
+        double relGain = gainPair.getValue();
+
+        // Call the second method with the computed gain
+        return addToPQ(b, u, pGraph.nodeWeight(u), relGain);
     }
+
 
     private boolean addToPQ(BlockID b, NodeID u, NodeWeight uWeight, double relGain) {
-        // Implementation of the addToPQ method
-        return false;
+        // Ensure the node weight and block ID are correct
+        assert uWeight.equals(pGraph.nodeWeight(u)) : "Node weight mismatch for node u";
+        assert b.equals(pGraph.block(u)) : "Block ID mismatch for node u";
+
+        // Check if the block's PQ can accommodate the node based on its weight and relative gain
+        if (pqWeight.get(b.value).value < blockOverload(b).value || pq.empty(b.value) || relGain > pq.peekMinKey(b.value)) {
+            // Debugging information if needed
+            if (DEBUG) {
+                System.out.println("Add node " + u + " to PQ with block " + b + ", PQ weight " + pqWeight.get(b.value) + ", rel gain " + relGain);
+            }
+
+            // Push the node 'u' into the priority queue for block 'b' with the computed gain
+            pq.push(b.value, u, relGain);
+            pqWeight.set(b.value, new BlockWeight(pqWeight.get(b.value).value + uWeight.value));
+
+            // If the new relative gain exceeds the current minimum in the PQ, adjust the PQ
+            if (relGain > pq.peekMinKey(b.value)) {
+                // Get the minimum node in the PQ and its weight
+                NodeID minNode = pq.peekMinId(b.value);
+                NodeWeight minWeight = pGraph.nodeWeight(minNode);
+
+                // If removing the minimum node still satisfies the overload constraint, pop it
+                if (pqWeight.get(b.value).value - minWeight.value >= blockOverload(b).value) {
+                    pq.popMin(b.value);
+                    pqWeight.set(b.value, new BlockWeight(pqWeight.get(b.value).value - minWeight.value));
+                }
+            }
+
+            return true;  // Node was successfully added to the PQ
+        }
+
+        return false;  // Node could not be added to the PQ
     }
+
 
     private Pair<BlockID, Double> computeGain(NodeID u, BlockID uBlock) {
-        // Implementation of the computeGain method
-        return null;
+        // Get the node weight
+        NodeWeight uWeight = pGraph.nodeWeight(u);
+
+        // Use arrays to store mutable values
+        final BlockID[] maxGainer = {uBlock};
+        final EdgeWeight[] maxExternalGain = {new EdgeWeight(0)};
+        final EdgeWeight[] internalDegree = {new EdgeWeight(0)};
+
+        // Retrieve or initialize the rating map for uBlock
+        RatingMap<BlockID, EdgeWeight> map = ratingMap.get(uBlock);
+
+        if (map == null) {
+            // Initialize with a reasonable size (using pGraph.k() as the maximum number of blocks)
+            map = new RatingMap<>(pGraph.k().value);
+            ratingMap.put(uBlock, map);
+        }
+
+        // Iterate over the neighbors of the node 'u'
+        for (Edge edge : pGraph.neighbors(u)) {
+            NodeID v = pGraph.edgeTarget(edge.getEdgeID());
+            BlockID vBlock = pGraph.block(v);
+
+            // If 'v' is in a different block and the move would not overload 'vBlock'
+            if (!uBlock.equals(vBlock) &&
+                    pGraph.blockWeight(vBlock).value + uWeight.value <= pCtx.blockWeights.max(vBlock.value).value) {
+                // Accumulate external degree for this adjacent block
+                map.execute(pGraph.degree(u).value, adjMap ->
+                        adjMap.put(vBlock, adjMap.getOrDefault(vBlock, new EdgeWeight(0)).add(pGraph.edgeWeight(edge.getEdgeID()))));
+            } else if (uBlock.equals(vBlock)) {
+                // Accumulate internal degree
+                internalDegree[0] = internalDegree[0].add(pGraph.edgeWeight(edge.getEdgeID()));
+            }
+        }
+
+        // Select the block that maximizes the gain
+        Random_shm random = Random_shm.getInstance();  // Assuming you have a Random class instance
+        map.execute(pGraph.degree(u).value, adjMap -> {
+            for (Map.Entry<BlockID, EdgeWeight> entry : adjMap.entrySet()) {
+                BlockID block = entry.getKey();
+                EdgeWeight gain = entry.getValue();
+
+                if (gain.compareTo(maxExternalGain[0]) > 0 ||
+                        (gain.compareTo(maxExternalGain[0]) == 0 && random.randomBool())) {
+                    maxGainer[0] = block;
+                    maxExternalGain[0] = gain;
+                }
+            }
+            // Clear the map after processing
+            adjMap.clear();
+        });
+
+        // Compute the absolute and relative gain based on the internal and external degrees
+        EdgeWeight gain = maxExternalGain[0].subtract(internalDegree[0]);
+        double relativeGain = computeRelativeGain(gain.value, uWeight.value);
+
+        // Return the block with the best gain and the relative gain
+        return new Pair<>(maxGainer[0], relativeGain);
     }
 
+
+
     private void initFeasibleTargetBlocks() {
-        // Implementation of the initFeasibleTargetBlocks method
+        // If statistics are enabled, increment the number of feasible target block initializations
+        if (STATISTICS) {
+            stats.numFeasibleTargetBlockInits.incrementAndGet();
+        }
+
+        // Clear all thread-local feasible target blocks
+        feasibleTargetBlocks.forEach((blockID, blockList) -> blockList.clear());
+
+        // Loop over all blocks in the graph
+        for (BlockID b : pGraph.blocks()) {
+            // Check if the block's weight is less than the perfectly balanced weight
+            if (pGraph.blockWeight(b).value < pCtx.blockWeights.perfectlyBalanced(b.value).value) {
+                // Add the block to the list of feasible target blocks
+                feasibleTargetBlocks.computeIfAbsent(b, key -> new ArrayList<>()).add(b);
+            }
+        }
     }
+
 
     private double computeRelativeGain(long absoluteGain, long weight) {
         if (absoluteGain >= 0) {

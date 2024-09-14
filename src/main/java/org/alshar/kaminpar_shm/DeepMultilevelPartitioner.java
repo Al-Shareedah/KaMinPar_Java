@@ -65,7 +65,7 @@ public class DeepMultilevelPartitioner extends Partitioner {
                 refine(pGraph);
             }
             if (pGraph.k().value < inputCtx.partition.k.value) {
-                extendPartition(pGraph, inputCtx.partition.k);
+                pGraph = extendPartition(pGraph, inputCtx.partition.k);
                 refine(pGraph);
             }
         }
@@ -187,7 +187,7 @@ public class DeepMultilevelPartitioner extends Partitioner {
         return cGraph;
     }
     private void calculateCCM(List<Integer> actualSizes, int totalNodes) {
-        List<Integer> desiredSizes = Arrays.asList(2670, 3204, 2136, 2670);
+        List<Integer> desiredSizes = Arrays.asList(11014, 3304, 991, 297);
         int totalDifference = 0;
         int partitionsNotMeetingSize = 0;
         double totalPercentageOff = 0.0;
@@ -214,28 +214,35 @@ public class DeepMultilevelPartitioner extends Partitioner {
     }
     private void calculateConnectedComponentsAndCCM(PartitionedGraph pGraph) {
         Map<BlockID, Set<NodeID>> blockNodes = new HashMap<>();
+
+        // Group nodes by their block ID
         for (NodeID u : pGraph.nodes()) {
             blockNodes.computeIfAbsent(pGraph.block(u), k -> new HashSet<>()).add(u);
         }
 
         List<Integer> actualSizes = new ArrayList<>();
+        int totalComponents = 0;  // To accumulate total number of connected components
+
+        // Iterate through each block and calculate its connected components
         for (Map.Entry<BlockID, Set<NodeID>> entry : blockNodes.entrySet()) {
             BlockID blockId = entry.getKey();
             Set<NodeID> nodes = entry.getValue();
 
             Map<NodeID, Boolean> visitedNodes = new HashMap<>();
             for (NodeID node : nodes) {
-                visitedNodes.put(node, false);
+                visitedNodes.put(node, false);  // Mark all nodes as unvisited
             }
 
             Map<NodeID, List<NodeID>> connectedComponents = new HashMap<>();
 
+            // Depth-first search to find connected components
             for (NodeID node : nodes) {
                 if (!visitedNodes.get(node)) {
                     List<NodeID> component = new ArrayList<>();
                     Stack<NodeID> stack = new Stack<>();
                     stack.push(node);
 
+                    // Explore the component using DFS
                     while (!stack.isEmpty()) {
                         NodeID u = stack.pop();
 
@@ -251,18 +258,28 @@ public class DeepMultilevelPartitioner extends Partitioner {
                         }
                     }
 
+                    // Store this connected component
                     connectedComponents.put(node, component);
                 }
             }
+
+            // Number of connected components for the current block
             int numComponents = connectedComponents.size();
+            totalComponents += numComponents;  // Accumulate the total number of components
+
+            // Print information for the current block
             System.out.printf("Block %d has %d nodes and %d components:\n", blockId.value, nodes.size(), numComponents);
 
-            actualSizes.add(nodes.size());
+            actualSizes.add(nodes.size());  // Store the size of the block
         }
+
+        // Print the total number of connected components across all blocks
+        System.out.printf("Total number of connected components across all blocks: %d\n", totalComponents);
 
         // Calculate CCM based on the desired sizes and actual block sizes
         calculateCCM(actualSizes, pGraph.n().value);
     }
+
 
 
 

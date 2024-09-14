@@ -4,6 +4,7 @@ import org.alshar.Graph;
 import org.alshar.common.datastructures.*;
 import org.alshar.common.Seq;
 
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.stream.IntStream;
 
@@ -89,6 +90,22 @@ public class PartitionedGraph extends GraphDelegate {
             }
         }
     }
+    public Iterable<BlockID> blocks() {
+        return () -> new Iterator<BlockID>() {
+            private int current = 0;
+
+            @Override
+            public boolean hasNext() {
+                return current < k.value; // Iterate up to the total number of blocks (k)
+            }
+
+            @Override
+            public BlockID next() {
+                return new BlockID(current++);
+            }
+        };
+    }
+
 
     public BlockWeight blockWeight(BlockID blockID) {
         return blockWeights.get(blockID.value);
