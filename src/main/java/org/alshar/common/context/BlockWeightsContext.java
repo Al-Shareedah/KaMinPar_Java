@@ -33,7 +33,7 @@ public class BlockWeightsContext {
         }
     }
 
-    public void setup(PartitionContext pCtx) {
+    public void setup(PartitionContext pCtx, long [] blockWeightsConstraint) {
         if (pCtx.k.value == 0) {
             throw new IllegalStateException("PartitionContext::k not initialized");
         }
@@ -44,12 +44,14 @@ public class BlockWeightsContext {
             throw new IllegalStateException("PartitionContext::max_node_weight not initialized");
         }
 
-        long perfectlyBalancedBlockWeight = (long) Math.ceil(1.0 * pCtx.totalNodeWeight.value / pCtx.k.value);
-        long maxBlockWeight = (long) ((1.0 + pCtx.epsilon) * perfectlyBalancedBlockWeight);
+        // Initialize the perfectlyBalancedBlockWeights list with user-defined values
+        perfectlyBalancedBlockWeights = new ArrayList<>(pCtx.k.value);
+        for (int i = 0; i < pCtx.k.value; i++) {
+            perfectlyBalancedBlockWeights.add(new BlockWeight(blockWeightsConstraint[i]));
+        }
 
-        maxBlockWeights = new ArrayList<>(Collections.nCopies(pCtx.k.value, new BlockWeight(0)));
-        perfectlyBalancedBlockWeights = new ArrayList<>(Collections.nCopies(pCtx.k.value, new BlockWeight(0)));
-
+        // Initialize the maxBlockWeights list
+        maxBlockWeights = new ArrayList<>(pCtx.k.value);
         ForkJoinPool forkJoinPool = new ForkJoinPool();
 
         try {
@@ -57,11 +59,15 @@ public class BlockWeightsContext {
                 @Override
                 protected void compute() {
                     for (int b = 0; b < pCtx.k.value; b++) {
-                        perfectlyBalancedBlockWeights.set(b, new BlockWeight(perfectlyBalancedBlockWeight));
+                        // Use the individual perfectlyBalancedBlockWeights for each block to calculate the maxBlockWeight
+                        long perfectlyBalancedWeight = perfectlyBalancedBlockWeights.get(b).value;
+                        long maxBlockWeight = (long) ((1.0 + pCtx.epsilon) * perfectlyBalancedWeight);
+
+                        // Calculate the actual maxBlockWeight based on maxNodeWeight
                         if (pCtx.maxNodeWeight.value == 1) {
-                            maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
+                            maxBlockWeights.add(new BlockWeight(maxBlockWeight));
                         } else {
-                            maxBlockWeights.set(b, new BlockWeight(Math.max(maxBlockWeight, perfectlyBalancedBlockWeight + pCtx.maxNodeWeight.value)));
+                            maxBlockWeights.add(new BlockWeight(Math.max(maxBlockWeight, perfectlyBalancedWeight + pCtx.maxNodeWeight.value)));
                         }
                     }
                 }
@@ -130,15 +136,10 @@ public class BlockWeightsContext {
         return maxBlockWeights.get(b);
     }
 
-    public List<BlockWeight> allMax() {
-        return maxBlockWeights;
-    }
+
 
     public BlockWeight perfectlyBalanced(int b) {
         return perfectlyBalancedBlockWeights.get(b);
     }
 
-    public List<BlockWeight> allPerfectlyBalanced() {
-        return perfectlyBalancedBlockWeights;
-    }
 }

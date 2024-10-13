@@ -12,11 +12,12 @@ public class PartitionContext {
     public NodeWeight totalNodeWeight = kaminpar.kInvalidNodeWeight;
     public EdgeWeight totalEdgeWeight = kaminpar.kInvalidEdgeWeight;
     public NodeWeight maxNodeWeight = kaminpar.kInvalidNodeWeight;
+    public long[] blockWeightsConstraint;
 
     public BlockWeightsContext blockWeights = new BlockWeightsContext();
 
     void setupBlockWeights() {
-        blockWeights.setup(this);
+        blockWeights.setup(this, blockWeightsConstraint);
     }
 
     public PartitionContext() {
@@ -30,6 +31,7 @@ public class PartitionContext {
         this.totalEdgeWeight = new EdgeWeight(other.totalEdgeWeight.value);
         this.maxNodeWeight = new NodeWeight(other.maxNodeWeight.value);
         this.blockWeights = new BlockWeightsContext(other.blockWeights);
+        this.blockWeightsConstraint = other.blockWeightsConstraint.clone();
     }
 
     public void setup(Graph graph) {
