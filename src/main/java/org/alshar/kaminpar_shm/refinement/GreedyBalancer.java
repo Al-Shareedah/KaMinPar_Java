@@ -119,7 +119,7 @@ public class GreedyBalancer extends Refiner {
 
         // Calculate the initial overload
         NodeWeight initialOverload = Metrics.totalOverload(pGraph, pCtx);
-        if (true) {
+        if (initialOverload.value == 0) {
             return true; // No overload means no refinement needed
         }
 
@@ -455,55 +455,53 @@ public class GreedyBalancer extends Refiner {
         final EdgeWeight[] internalDegree = {new EdgeWeight(0)};
 
         // Retrieve or initialize the rating map for uBlock
-        RatingMap<BlockID, EdgeWeight> map = ratingMap.get(uBlock);
+        synchronized (ratingMap) {
+            RatingMap<BlockID, EdgeWeight> map = ratingMap.get(uBlock);
 
-        if (map == null) {
-            // Initialize with a reasonable size (using pGraph.k() as the maximum number of blocks)
-            map = new RatingMap<>(pGraph.k().value);
-            ratingMap.put(uBlock, map);
-        }
-
-        // Iterate over the neighbors of the node 'u'
-        for (Edge edge : pGraph.neighbors(u)) {
-            NodeID v = pGraph.edgeTarget(edge.getEdgeID());
-            BlockID vBlock = pGraph.block(v);
-
-            // If 'v' is in a different block and the move would not overload 'vBlock'
-            if (!uBlock.equals(vBlock) &&
-                    pGraph.blockWeight(vBlock).value + uWeight.value <= pCtx.blockWeights.max(vBlock.value).value) {
-                // Accumulate external degree for this adjacent block
-                map.execute(pGraph.degree(u).value, adjMap ->
-                        adjMap.put(vBlock, adjMap.getOrDefault(vBlock, new EdgeWeight(0)).add(pGraph.edgeWeight(edge.getEdgeID()))));
-            } else if (uBlock.equals(vBlock)) {
-                // Accumulate internal degree
-                internalDegree[0] = internalDegree[0].add(pGraph.edgeWeight(edge.getEdgeID()));
+            if (map == null) {
+                map = new RatingMap<>(pGraph.k().value); // Initialize with a reasonable size
+                ratingMap.put(uBlock, map);
             }
-        }
 
-        // Select the block that maximizes the gain
-        Random_shm random = Random_shm.getInstance();  // Assuming you have a Random class instance
-        map.execute(pGraph.degree(u).value, adjMap -> {
-            for (Map.Entry<BlockID, EdgeWeight> entry : adjMap.entrySet()) {
-                BlockID block = entry.getKey();
-                EdgeWeight gain = entry.getValue();
+            // Iterate over the neighbors of the node 'u'
+            for (Edge edge : pGraph.neighbors(u)) {
+                NodeID v = pGraph.edgeTarget(edge.getEdgeID());
+                BlockID vBlock = pGraph.block(v);
 
-                if (gain.compareTo(maxExternalGain[0]) > 0 ||
-                        (gain.compareTo(maxExternalGain[0]) == 0 && random.randomBool())) {
-                    maxGainer[0] = block;
-                    maxExternalGain[0] = gain;
+                if (!uBlock.equals(vBlock) &&
+                        pGraph.blockWeight(vBlock).value + uWeight.value <= pCtx.blockWeights.max(vBlock.value).value) {
+                    map.execute(pGraph.degree(u).value, adjMap -> {
+                        adjMap.put(vBlock, adjMap.getOrDefault(vBlock, new EdgeWeight(0))
+                                .add(pGraph.edgeWeight(edge.getEdgeID())));
+                    });
+                } else if (uBlock.equals(vBlock)) {
+                    internalDegree[0] = internalDegree[0].add(pGraph.edgeWeight(edge.getEdgeID()));
                 }
             }
-            // Clear the map after processing
-            adjMap.clear();
-        });
 
-        // Compute the absolute and relative gain based on the internal and external degrees
+            // Select the block that maximizes the gain
+            Random_shm random = Random_shm.getInstance();
+            map.execute(pGraph.degree(u).value, adjMap -> {
+                for (Map.Entry<BlockID, EdgeWeight> entry : adjMap.entrySet()) {
+                    BlockID block = entry.getKey();
+                    EdgeWeight gain = entry.getValue();
+
+                    if (gain.compareTo(maxExternalGain[0]) > 0 ||
+                            (gain.compareTo(maxExternalGain[0]) == 0 && random.randomBool())) {
+                        maxGainer[0] = block;
+                        maxExternalGain[0] = gain;
+                    }
+                }
+                adjMap.clear();  // Clear the map after processing
+            });
+        }
+
         EdgeWeight gain = maxExternalGain[0].subtract(internalDegree[0]);
         double relativeGain = computeRelativeGain(gain.value, uWeight.value);
 
-        // Return the block with the best gain and the relative gain
         return new Pair<>(maxGainer[0], relativeGain);
     }
+
 
 
 

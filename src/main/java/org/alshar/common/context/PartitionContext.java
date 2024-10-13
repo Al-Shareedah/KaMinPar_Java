@@ -4,6 +4,9 @@ import org.alshar.Graph;
 import org.alshar.common.datastructures.*;
 import org.alshar.kaminpar_shm.kaminpar;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 public class PartitionContext {
     public double epsilon;
     public BlockID k;
@@ -14,9 +17,12 @@ public class PartitionContext {
     public NodeWeight maxNodeWeight = kaminpar.kInvalidNodeWeight;
 
     public BlockWeightsContext blockWeights = new BlockWeightsContext();
+    // Queue for user-defined block weight constraints
+    public Queue<BlockWeight> blockConstraints = new LinkedList<>();
+
 
     void setupBlockWeights() {
-        blockWeights.setup(this);
+        blockWeights.setup(this, blockConstraints);
     }
 
     public PartitionContext() {
@@ -30,6 +36,7 @@ public class PartitionContext {
         this.totalEdgeWeight = new EdgeWeight(other.totalEdgeWeight.value);
         this.maxNodeWeight = new NodeWeight(other.maxNodeWeight.value);
         this.blockWeights = new BlockWeightsContext(other.blockWeights);
+        this.blockConstraints = new LinkedList<>(other.blockConstraints);
     }
 
     public void setup(Graph graph) {
@@ -40,6 +47,7 @@ public class PartitionContext {
         maxNodeWeight = new NodeWeight(graph.maxNodeWeight().value);
         setupBlockWeights();
     }
+
     public PartitionContext getPartition() {
         return this;
     }

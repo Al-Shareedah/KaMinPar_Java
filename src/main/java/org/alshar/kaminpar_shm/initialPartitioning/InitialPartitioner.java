@@ -48,6 +48,22 @@ public class InitialPartitioner {
 
         this.numBipartitionRepetitions = (int) Math.ceil(i_ctx.repetitionMultiplier * finalK.getValue() / MathUtils.ceilLog2(ctx.partition.k.value));
     }
+    public InitialPartitioner(Graph graph, Context ctx, BlockID finalK, MemoryContext mCtx, boolean useQueue) {
+        this.m_ctx = mCtx;
+        this.graph = graph;
+        this.i_ctx = ctx.initialPartitioning;
+        this.coarsener = new InitialCoarsener(graph, i_ctx.coarsening, m_ctx.coarsenerMCtx);
+
+        BlockID[] finalKs = MathUtils.splitIntegral(finalK);
+
+        this.p_ctx = PartitionUtils.createBipartitionContextWithQueue(graph, finalKs[0], finalKs[1], ctx.partition);
+
+
+        this.refiner = InitialRefinerFactory.createInitialRefiner(graph, p_ctx, i_ctx.refinement, m_ctx.refinerMCtx);
+
+        this.numBipartitionRepetitions = (int) Math.ceil(i_ctx.repetitionMultiplier * finalK.getValue() / MathUtils.ceilLog2(ctx.partition.k.value));
+    }
+
 
     public MemoryContext free() {
         m_ctx.refinerMCtx = refiner.free();

@@ -108,6 +108,9 @@ public class DeepMultilevelPartitioner extends Partitioner {
         //Debug.dumpPartitionHierarchy(pGraph, coarsener.size(), "pre-refinement", inputCtx);
 
         Logger.log("  Running refinement on " + pGraph.k().value + " blocks");
+        if (currentPCtx.k.equals(inputCtx.partition.k)) {
+            currentPCtx.blockWeights = new BlockWeightsContext(inputCtx.partition.blockWeights);
+        }
         Helper.refine(refiner, pGraph, currentPCtx);
 
         Logger.log("    Cut:       " + Metrics.edgeCut(pGraph).value);

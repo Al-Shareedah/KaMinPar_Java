@@ -49,6 +49,25 @@ public class PartitionUtils {
         twowayPCtx.blockWeights.setup(twowayPCtx, k1.value + k2.value);
         return twowayPCtx;
     }
+    public static PartitionContext createBipartitionContextWithQueue(
+            Graph subgraph, BlockID k1, BlockID k2, PartitionContext kwayPCtx) {
+        PartitionContext twowayPCtx = new PartitionContext();
+        twowayPCtx.k = new BlockID(2);
+        twowayPCtx.setup(subgraph);
+
+        // Compute the epsilon value based on the weights
+        twowayPCtx.epsilon = compute2WayAdaptiveEpsilon(subgraph.totalNodeWeight().value, k1.value + k2.value, kwayPCtx);
+
+        // Access the blockConstraints queue from kwayPCtx and pass it to setup
+        if (kwayPCtx.blockConstraints != null && !kwayPCtx.blockConstraints.isEmpty()) {
+            twowayPCtx.blockWeights.setup(twowayPCtx, k1.value + k2.value, kwayPCtx.blockConstraints);
+        } else {
+            throw new IllegalStateException("Block constraints queue is empty or not initialized.");
+        }
+
+        return twowayPCtx;
+    }
+
 
     // Implementation of computeMaxClusterWeight
     public static NodeWeight computeMaxClusterWeight(

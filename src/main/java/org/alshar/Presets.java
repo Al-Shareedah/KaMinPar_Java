@@ -2,6 +2,7 @@ package org.alshar;
 
 import org.alshar.common.context.*;
 import org.alshar.common.datastructures.BlockID;
+import org.alshar.common.datastructures.BlockWeight;
 import org.alshar.common.enums.*;
 
 import java.util.Arrays;
@@ -55,8 +56,14 @@ public class Presets {
 
         // Set Partition Context
         ctx.partition = new PartitionContext();
-        ctx.partition.epsilon = 0.029999999999999999;
+        ctx.partition.epsilon = 0.01;
         ctx.partition.k = new BlockID(Integer.MAX_VALUE); // kInvalidBlockID equivalent
+
+        // Set block constraints
+        ctx.partition.blockConstraints.add(new BlockWeight(300));
+        ctx.partition.blockConstraints.add(new BlockWeight(250));
+        ctx.partition.blockConstraints.add(new BlockWeight(400));
+        ctx.partition.blockConstraints.add(new BlockWeight(183));
 
         // Set Coarsening Context
         ctx.coarsening = new CoarseningContext();

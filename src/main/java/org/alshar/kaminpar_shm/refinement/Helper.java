@@ -60,6 +60,18 @@ public class Helper {
         ipMCtxPool.local().put(partitioner.free());
         return pGraph;
     }
+    public static PartitionedGraph bipartitionWithQueue(
+            Graph graph, BlockID finalK, Context inputCtx, GlobalInitialPartitionerMemoryPool ipMCtxPool) {
+
+        // Call the modified InitialPartitioner constructor
+        InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx, finalK, ipMCtxPool.local().get(), true);
+
+        PartitionedGraph pGraph = partitioner.partition();
+        ipMCtxPool.local().put(partitioner.free());
+
+        return pGraph;
+    }
+
 
     public static void extendPartitionRecursive(
             Graph graph,
@@ -82,7 +94,7 @@ public class Helper {
         // Start a timer for the bipartition process
         try (var bipartitionTimer = Timer_km.global().startScopedTimer("Extend Partition")) {
             // Perform the initial bipartition of the graph
-            pGraph = bipartition(graph, finalK, inputCtx, ipMCtxPool);
+            pGraph = bipartitionWithQueue(graph, finalK, inputCtx, ipMCtxPool);
         }
 
         // Split k and finalK into two parts
