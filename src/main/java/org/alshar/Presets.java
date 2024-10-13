@@ -57,8 +57,6 @@ public class Presets {
         ctx.partition = new PartitionContext();
         ctx.partition.epsilon = 0.029999999999999999;
         ctx.partition.k = new BlockID(Integer.MAX_VALUE); // kInvalidBlockID equivalent
-        long[] userDefinedBlockWeights = new long[] {300, 250, 400, 183}; // User-defined weights for each partition
-        ctx.partition.blockWeightsConstraint = userDefinedBlockWeights;
 
         // Set Coarsening Context
         ctx.coarsening = new CoarseningContext();
