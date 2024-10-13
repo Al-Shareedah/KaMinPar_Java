@@ -228,7 +228,7 @@ public class kaminpar {
             Logger.log("");
             Logger.log("Partition summary:");
             if (pGraph.k().value != ctx.partition.k.value) {
-                Logger.log(Logger.RED + "  Number of blocks: " + pGraph.k().value);
+                Logger.log("  Number of blocks: " + pGraph.k().value);
             } else {
                 Logger.log("  Number of blocks: " + pGraph.k().value);
             }
@@ -237,7 +237,7 @@ public class kaminpar {
             if (feasible) {
                 Logger.log("  Feasible:         yes");
             } else {
-                Logger.log(Logger.RED + "  Feasible:         no");
+                Logger.log("  Feasible:         no");
             }
         }
 
