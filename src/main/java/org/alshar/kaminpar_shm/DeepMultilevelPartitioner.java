@@ -104,22 +104,74 @@ public class DeepMultilevelPartitioner extends Partitioner {
     }
 
     private void refine(PartitionedGraph pGraph) {
-        // If requested, dump the current partition to disk before refinement ...
-        //Debug.dumpPartitionHierarchy(pGraph, coarsener.size(), "pre-refinement", inputCtx);
-
         Logger.log("  Running refinement on " + pGraph.k().value + " blocks");
+
+        // Check if currentPCtx.k is greater than 2 and less than inputCtx.partition.k
+        if (currentPCtx.k.value > 2 && currentPCtx.k.value < inputCtx.partition.k.value) {
+            int currentK = currentPCtx.k.value;
+            int inputK = inputCtx.partition.k.value;
+
+            // Determine how many block weights to merge
+            int mergeFactor = inputK / currentK;
+
+            // List to store the combined block weights and max block weights
+            List<BlockWeight> mergedPerfectlyBalancedWeights = new ArrayList<>();
+            List<BlockWeight> mergedMaxWeights = new ArrayList<>();
+
+            // Combine block weights in groups to reduce their number
+            List<BlockWeight> inputBlockWeights = inputCtx.partition.blockWeights.allPerfectlyBalanced();
+            for (int i = 0; i < inputBlockWeights.size(); i += mergeFactor) {
+                long mergedWeightValue = 0;
+                for (int j = 0; j < mergeFactor; j++) {
+                    if (i + j < inputBlockWeights.size()) {
+                        mergedWeightValue += inputBlockWeights.get(i + j).value;
+                    }
+                }
+                mergedPerfectlyBalancedWeights.add(new BlockWeight(mergedWeightValue));
+
+                // Calculate maxBlockWeight for the merged block
+                long maxBlockWeight = (long) ((1.0 + currentPCtx.epsilon) * mergedWeightValue);
+                if (currentPCtx.maxNodeWeight.value == 1) {
+                    mergedMaxWeights.add(new BlockWeight(maxBlockWeight));
+                } else {
+                    mergedMaxWeights.add(new BlockWeight(Math.max(maxBlockWeight, mergedWeightValue + currentPCtx.maxNodeWeight.value)));
+                }
+            }
+
+            // Update currentPCtx.blockWeights with the merged weights
+            currentPCtx.blockWeights = new BlockWeightsContext();
+            currentPCtx.blockWeights.perfectlyBalancedBlockWeights = mergedPerfectlyBalancedWeights;
+            currentPCtx.blockWeights.maxBlockWeights = mergedMaxWeights;
+
+        }
+
+        // If currentPCtx.k equals inputCtx.partition.k, update the blockWeights directly
         if (currentPCtx.k.equals(inputCtx.partition.k)) {
             currentPCtx.blockWeights = new BlockWeightsContext(inputCtx.partition.blockWeights);
         }
+        // When currentPCtx.k == 2, set the blockWeights to bipartition_blockWeights and maxBlockWeights to bipartition_MaxblockWeights
+        if (currentPCtx.k.value == 2) {
+            currentPCtx.blockWeights.perfectlyBalancedBlockWeights = Arrays.asList(
+                    inputCtx.partition.bipartition_blockWeights[0],
+                    inputCtx.partition.bipartition_blockWeights[1]
+            );
+            currentPCtx.blockWeights.maxBlockWeights = Arrays.asList(
+                    inputCtx.partition.bipartition_MaxblockWeights[0],
+                    inputCtx.partition.bipartition_MaxblockWeights[1]
+            );
+
+
+        }
+
         Helper.refine(refiner, pGraph, currentPCtx);
 
         Logger.log("    Cut:       " + Metrics.edgeCut(pGraph).value);
         Logger.log("    Imbalance: " + Metrics.imbalance(pGraph));
         Logger.log("    Feasible:  " + (Metrics.isFeasible(pGraph, currentPCtx) ? "yes" : "no"));
-
-        // ... and dump it after refinement.
-        //Debug.dumpPartitionHierarchy(pGraph, coarsener.size(), "post-refinement", inputCtx);
     }
+
+
+
 
 
     private PartitionedGraph extendPartition(PartitionedGraph pGraph, BlockID kPrime) {

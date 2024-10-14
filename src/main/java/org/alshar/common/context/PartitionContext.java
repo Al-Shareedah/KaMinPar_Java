@@ -5,6 +5,7 @@ import org.alshar.common.datastructures.*;
 import org.alshar.kaminpar_shm.kaminpar;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 public class PartitionContext {
@@ -19,6 +20,10 @@ public class PartitionContext {
     public BlockWeightsContext blockWeights = new BlockWeightsContext();
     // Queue for user-defined block weight constraints
     public Queue<BlockWeight> blockConstraints = new LinkedList<>();
+
+    // New variables to store bipartition block weights
+    public BlockWeight bipartition_blockWeights[] = new BlockWeight[2];
+    public BlockWeight bipartition_MaxblockWeights[] = new BlockWeight[2];
 
 
     void setupBlockWeights() {
@@ -51,5 +56,6 @@ public class PartitionContext {
     public PartitionContext getPartition() {
         return this;
     }
+
 
 }

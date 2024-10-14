@@ -13,8 +13,8 @@ import java.util.concurrent.RecursiveAction;
 import java.util.concurrent.TimeUnit;
 
 public class BlockWeightsContext {
-    private List<BlockWeight> perfectlyBalancedBlockWeights;
-    private List<BlockWeight> maxBlockWeights;
+    public List<BlockWeight> perfectlyBalancedBlockWeights;
+    public List<BlockWeight> maxBlockWeights;
     public BlockWeightsContext() {
         // Default constructor
     }

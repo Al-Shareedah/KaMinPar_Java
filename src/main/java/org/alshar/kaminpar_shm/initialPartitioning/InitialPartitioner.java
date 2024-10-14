@@ -26,7 +26,7 @@ public class InitialPartitioner {
     private MemoryContext m_ctx;
     private final Graph graph;
     private final InitialPartitioningContext i_ctx;
-    private PartitionContext p_ctx;
+    public PartitionContext p_ctx;
     private InitialCoarsener coarsener;
     private InitialRefiner refiner;
     private int numBipartitionRepetitions;
