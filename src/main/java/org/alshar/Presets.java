@@ -62,8 +62,10 @@ public class Presets {
         // Set block constraints
         ctx.partition.blockConstraints.add(new BlockWeight(300));
         ctx.partition.blockConstraints.add(new BlockWeight(250));
-        ctx.partition.blockConstraints.add(new BlockWeight(400));
-        ctx.partition.blockConstraints.add(new BlockWeight(183));
+        ctx.partition.blockConstraints.add(new BlockWeight(200));
+        ctx.partition.blockConstraints.add(new BlockWeight(150));
+        ctx.partition.blockConstraints.add(new BlockWeight(133));
+        ctx.partition.blockConstraints.add(new BlockWeight(100));
 
         // Set Coarsening Context
         ctx.coarsening = new CoarseningContext();
