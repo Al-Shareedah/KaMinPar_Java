@@ -55,7 +55,7 @@ public class Presets {
 
         // Set Partition Context
         ctx.partition = new PartitionContext();
-        ctx.partition.epsilon = 0.029999999999999999;
+        ctx.partition.epsilon = 0.02;
         ctx.partition.k = new BlockID(Integer.MAX_VALUE); // kInvalidBlockID equivalent
 
         // Set Coarsening Context
