@@ -116,7 +116,8 @@ public class LPClustering extends Clusterer {
             this.numNodes = numNodes.value;
             this.currentNumClusters = numNodes.value;
             this._initialNumClusters = numNodes.value;
-
+            this.chunks.clear();
+            this.buckets.clear();
             // Clear any existing state
             clusters = new AtomicIntegerArray(numNodes.value);
             clusterWeights = new AtomicLongArray(numNodes.value);
