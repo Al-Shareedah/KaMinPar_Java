@@ -56,7 +56,7 @@ public class InitialPartitioner {
 
         BlockID[] finalKs = MathUtils.splitIntegral(finalK);
 
-        this.p_ctx = PartitionUtils.createBipartitionContextWithQueue(graph, finalKs[0], finalKs[1], ctx.partition);
+        this.p_ctx = PartitionUtils.createBipartitionContext(graph, finalKs[0], finalKs[1], ctx.partition);
 
 
         this.refiner = InitialRefinerFactory.createInitialRefiner(graph, p_ctx, i_ctx.refinement, m_ctx.refinerMCtx);

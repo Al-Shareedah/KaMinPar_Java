@@ -64,7 +64,20 @@ public class Metrics {
     public static NodeWeight totalOverload(PartitionedGraph pGraph, PartitionContext pCtx) {
         long totalOverload = 0;
         for (int b = 0; b < pGraph.k().value; b++) {
-            totalOverload += Math.max(0, pGraph.blockWeight(new BlockID(b)).value - pCtx.blockWeights.max(b).value);
+            // Create a BlockID object for the current block
+            BlockID currentBlockID = new BlockID(b);
+
+            // Get the weight of the current block from the graph
+            long blockWeight = pGraph.blockWeight(currentBlockID).value;
+
+            // Get the maximum allowed block weight from the PartitionContext
+            long maxBlockWeight = pCtx.blockWeights.max(b).value;
+
+            // Calculate the overload for this block (if any)
+            long overload = Math.max(0, blockWeight - maxBlockWeight);
+
+            // Accumulate the total overload
+            totalOverload += overload;
         }
 
         return new NodeWeight(totalOverload);

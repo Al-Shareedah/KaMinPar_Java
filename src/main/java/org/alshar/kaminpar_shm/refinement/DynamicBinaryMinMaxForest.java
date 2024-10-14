@@ -1,7 +1,8 @@
 package org.alshar.kaminpar_shm.refinement;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.alshar.common.datastructures.NodeID;
+
+import java.util.*;
 
 public class DynamicBinaryMinMaxForest<ID, Key extends Comparable<Key>> {
 
@@ -12,6 +13,62 @@ public class DynamicBinaryMinMaxForest<ID, Key extends Comparable<Key>> {
         this.maxForest = new DynamicBinaryMaxForest<>(capacity, heaps);
         this.minForest = new DynamicBinaryMinForest<>(capacity, heaps);
     }
+
+    public void checkInconsistencies() {
+        // Get the actual number of heaps from the size of the heaps list
+        int heapCount = Math.min(maxForest.heapsCount(), minForest.heapsCount());  // Safeguard if maxForest and minForest sizes differ
+
+        for (int heap = 0; heap < heapCount; heap++) {
+            // Get the elements for the current heap in maxForest and minForest
+            List<HeapElement<ID, Key>> maxElements = maxForest.elements(heap);
+            List<HeapElement<ID, Key>> minElements = minForest.elements(heap);
+
+            // Create sets for IDs in each forest for easy comparison
+            Set<ID> maxForestIDs = new HashSet<>();
+            Set<ID> minForestIDs = new HashSet<>();
+
+            for (HeapElement<ID, Key> element : maxElements) {
+                maxForestIDs.add(element.id);
+            }
+
+            for (HeapElement<ID, Key> element : minElements) {
+                minForestIDs.add(element.id);
+            }
+
+            // Compare the two sets to find missing IDs in either forest
+            Set<ID> missingInMax = new HashSet<>(minForestIDs);
+            missingInMax.removeAll(maxForestIDs);  // IDs in minForest but not in maxForest
+
+            Set<ID> missingInMin = new HashSet<>(maxForestIDs);
+            missingInMin.removeAll(minForestIDs);  // IDs in maxForest but not in minForest
+
+            if (!missingInMax.isEmpty() || !missingInMin.isEmpty()) {
+                System.out.println("Inconsistencies found in heap " + heap + ":");
+                if (!missingInMax.isEmpty()) {
+                    System.out.println("  Missing in maxForest: " + missingInMax);
+                }
+                if (!missingInMin.isEmpty()) {
+                    System.out.println("  Missing in minForest: " + missingInMin);
+                }
+            }
+
+            // Now check if the keys for matching IDs are consistent between the two forests
+            for (ID id : maxForestIDs) {
+                if (minForestIDs.contains(id)) {
+                    Key maxKey = maxForest.key(heap, id);
+                    Key minKey = minForest.key(heap, id);
+
+                    if (!maxKey.equals(minKey)) {
+                        System.out.println("Inconsistent key for ID " + id + " in heap " + heap + ":");
+                        System.out.println("  maxForest key: " + maxKey);
+                        System.out.println("  minForest key: " + minKey);
+                    }
+                }
+            }
+        }
+    }
+
+
 
     public int capacity() {
         return maxForest.capacity();
@@ -25,9 +82,9 @@ public class DynamicBinaryMinMaxForest<ID, Key extends Comparable<Key>> {
         return maxForest.size(heap);
     }
 
-    public void push(int heap, ID id, Key key) {
-        maxForest.push(heap, id, key);
-        minForest.push(heap, id, key);
+    public void push(int heap, NodeID id, Key key) {
+        maxForest.push(heap, (ID) id, key);
+        minForest.push(heap, (ID) id, key);
     }
 
     public void changePriority(int heap, ID id, Key key) {
@@ -110,22 +167,24 @@ public class DynamicBinaryMinMaxForest<ID, Key extends Comparable<Key>> {
 class DynamicBinaryMaxForest<ID, Key extends Comparable<Key>> {
 
     private final List<List<HeapElement<ID, Key>>> heaps;
-    private final List<Integer> idPos;
+    // Change from List<Integer> to Map<ID, Integer>
+    private final Map<ID, Integer> idPos;  // Map to store the position of each ID in the heap
 
     public DynamicBinaryMaxForest(int capacity, int numHeaps) {
         this.heaps = new ArrayList<>(numHeaps);
-        this.idPos = new ArrayList<>(capacity);
+        this.idPos = new HashMap<>(capacity);  // Initialize as a HashMap
         for (int i = 0; i < numHeaps; i++) {
             heaps.add(new ArrayList<>());
-        }
-        for (int i = 0; i < capacity; i++) {
-            idPos.add(-1); // Initialize with invalid ID position
         }
     }
 
     public int capacity() {
         return idPos.size();
     }
+    public int heapsCount() {
+        return heaps.size();
+    }
+
 
     public int size() {
         return heaps.stream().mapToInt(List::size).sum();
@@ -138,12 +197,12 @@ class DynamicBinaryMaxForest<ID, Key extends Comparable<Key>> {
     public void push(int heap, ID id, Key key) {
         List<HeapElement<ID, Key>> heapList = heaps.get(heap);
         heapList.add(new HeapElement<>(id, key));
-        idPos.set((Integer) id, heapList.size() - 1);
+        idPos.put(id, heapList.size() - 1);  // Use the map to store the position
         siftUp(heap, heapList.size() - 1);
     }
 
     public void changePriority(int heap, ID id, Key key) {
-        int pos = idPos.get((Integer) id);
+        int pos = idPos.get(id);  // Get the position using the map
         Key currentKey = heaps.get(heap).get(pos).key;
         if (key.compareTo(currentKey) > 0) {
             increasePriority(heap, id, key);
@@ -153,12 +212,12 @@ class DynamicBinaryMaxForest<ID, Key extends Comparable<Key>> {
     }
 
     public Key key(int heap, ID id) {
-        int pos = idPos.get((Integer) id);
+        int pos = idPos.get(id);  // Use the map to get the position
         return heaps.get(heap).get(pos).key;
     }
 
     public boolean contains(ID id) {
-        return idPos.get((Integer) id) != -1;
+        return idPos.containsKey(id);  // Use the map to check existence
     }
 
     public boolean empty(int heap) {
@@ -182,8 +241,8 @@ class DynamicBinaryMaxForest<ID, Key extends Comparable<Key>> {
         List<HeapElement<ID, Key>> heapList = heaps.get(heap);
         if (!heapList.isEmpty()) {
             HeapElement<ID, Key> lastElement = heapList.get(heapList.size() - 1);
-            idPos.set((Integer) lastElement.id, 0);
-            idPos.set((Integer) heapList.get(0).id, -1);
+            idPos.put(lastElement.id, 0);  // Update the position in the map
+            idPos.remove(heapList.get(0).id);  // Remove the old position from the map
             heapList.set(0, lastElement);
             heapList.remove(heapList.size() - 1);
             siftDown(heap, 0);
@@ -193,10 +252,11 @@ class DynamicBinaryMaxForest<ID, Key extends Comparable<Key>> {
     public void clear(int heap) {
         List<HeapElement<ID, Key>> heapList = heaps.get(heap);
         for (HeapElement<ID, Key> element : heapList) {
-            idPos.set((Integer) element.id, -1);
+            idPos.remove(element.id);  // Remove the ID from the map
         }
         heapList.clear();
     }
+
     public void clearAllHeaps() {
         for (int i = 0; i < heaps.size(); i++) {
             clear(i);
@@ -237,13 +297,13 @@ class DynamicBinaryMaxForest<ID, Key extends Comparable<Key>> {
     }
 
     private void increasePriority(int heap, ID id, Key newKey) {
-        int pos = idPos.get((Integer) id);
+        int pos = idPos.get(id);  // Use the map to get the position
         heaps.get(heap).get(pos).key = newKey;
         siftUp(heap, pos);
     }
 
     private void decreasePriority(int heap, ID id, Key newKey) {
-        int pos = idPos.get((Integer) id);
+        int pos = idPos.get(id);  // Use the map to get the position
         heaps.get(heap).get(pos).key = newKey;
         siftDown(heap, pos);
     }
@@ -253,30 +313,35 @@ class DynamicBinaryMaxForest<ID, Key extends Comparable<Key>> {
         HeapElement<ID, Key> temp = heapList.get(pos1);
         heapList.set(pos1, heapList.get(pos2));
         heapList.set(pos2, temp);
-        idPos.set((Integer) heapList.get(pos1).id, pos1);
-        idPos.set((Integer) heapList.get(pos2).id, pos2);
+
+        // Update positions in the map
+        idPos.put(heapList.get(pos1).id, pos1);
+        idPos.put(heapList.get(pos2).id, pos2);
     }
 }
+
 
 class DynamicBinaryMinForest<ID, Key extends Comparable<Key>> {
 
     private final List<List<HeapElement<ID, Key>>> heaps;
-    private final List<Integer> idPos;
+    // Change from List<Integer> to Map<ID, Integer>
+    private final Map<ID, Integer> idPos;  // Map to store the position of each ID in the heap
 
     public DynamicBinaryMinForest(int capacity, int numHeaps) {
         this.heaps = new ArrayList<>(numHeaps);
-        this.idPos = new ArrayList<>(capacity);
+        this.idPos = new HashMap<>(capacity);  // Initialize as a HashMap
         for (int i = 0; i < numHeaps; i++) {
             heaps.add(new ArrayList<>());
-        }
-        for (int i = 0; i < capacity; i++) {
-            idPos.add(-1); // Initialize with invalid ID position
         }
     }
 
     public int capacity() {
         return idPos.size();
     }
+    public int heapsCount() {
+        return heaps.size();
+    }
+
 
     public int size() {
         return heaps.stream().mapToInt(List::size).sum();
@@ -289,12 +354,12 @@ class DynamicBinaryMinForest<ID, Key extends Comparable<Key>> {
     public void push(int heap, ID id, Key key) {
         List<HeapElement<ID, Key>> heapList = heaps.get(heap);
         heapList.add(new HeapElement<>(id, key));
-        idPos.set((Integer) id, heapList.size() - 1);
+        idPos.put(id, heapList.size() - 1);  // Use the map to store the position
         siftUp(heap, heapList.size() - 1);
     }
 
     public void changePriority(int heap, ID id, Key key) {
-        int pos = idPos.get((Integer) id);
+        int pos = idPos.get(id);  // Get the position using the map
         Key currentKey = heaps.get(heap).get(pos).key;
         if (key.compareTo(currentKey) < 0) {
             decreasePriority(heap, id, key);
@@ -304,12 +369,12 @@ class DynamicBinaryMinForest<ID, Key extends Comparable<Key>> {
     }
 
     public Key key(int heap, ID id) {
-        int pos = idPos.get((Integer) id);
+        int pos = idPos.get(id);  // Use the map to get the position
         return heaps.get(heap).get(pos).key;
     }
 
     public boolean contains(ID id) {
-        return idPos.get((Integer) id) != -1;
+        return idPos.containsKey(id);  // Use the map to check existence
     }
 
     public boolean empty(int heap) {
@@ -332,11 +397,22 @@ class DynamicBinaryMinForest<ID, Key extends Comparable<Key>> {
     public void pop(int heap) {
         List<HeapElement<ID, Key>> heapList = heaps.get(heap);
         if (!heapList.isEmpty()) {
-            HeapElement<ID, Key> lastElement = heapList.get(heapList.size() - 1);
-            idPos.set((Integer) lastElement.id, 0);
-            idPos.set((Integer) heapList.get(0).id, -1);
-            heapList.set(0, lastElement);
+            // Step 1: Set the position of the back element to 0
+            HeapElement<ID, Key> backElement = heapList.get(heapList.size() - 1);
+            idPos.put(backElement.id, 0);  // Set the position of the back element to 0
+
+            // Step 2: Set the position of the front element to an invalid value (e.g., -1 or null)
+            HeapElement<ID, Key> frontElement = heapList.get(0);
+            idPos.put(frontElement.id, -1);  // Mark the front element as invalid (use null or a special value)
+
+            // Step 3: Swap the front element with the back element
+            heapList.set(0, backElement);
+            heapList.set(heapList.size() - 1, frontElement);  // Optional, but makes the next step clear
+
+            // Step 4: Remove the back element
             heapList.remove(heapList.size() - 1);
+
+            // Step 5: Sift down from the front to restore the heap property
             siftDown(heap, 0);
         }
     }
@@ -344,7 +420,7 @@ class DynamicBinaryMinForest<ID, Key extends Comparable<Key>> {
     public void clear(int heap) {
         List<HeapElement<ID, Key>> heapList = heaps.get(heap);
         for (HeapElement<ID, Key> element : heapList) {
-            idPos.set((Integer) element.id, -1);
+            idPos.remove(element.id);  // Remove the ID from the map
         }
         heapList.clear();
     }
@@ -389,13 +465,13 @@ class DynamicBinaryMinForest<ID, Key extends Comparable<Key>> {
     }
 
     private void increasePriority(int heap, ID id, Key newKey) {
-        int pos = idPos.get((Integer) id);
+        int pos = idPos.get(id);  // Use the map to get the position
         heaps.get(heap).get(pos).key = newKey;
         siftDown(heap, pos);
     }
 
     private void decreasePriority(int heap, ID id, Key newKey) {
-        int pos = idPos.get((Integer) id);
+        int pos = idPos.get(id);  // Use the map to get the position
         heaps.get(heap).get(pos).key = newKey;
         siftUp(heap, pos);
     }
@@ -405,10 +481,13 @@ class DynamicBinaryMinForest<ID, Key extends Comparable<Key>> {
         HeapElement<ID, Key> temp = heapList.get(pos1);
         heapList.set(pos1, heapList.get(pos2));
         heapList.set(pos2, temp);
-        idPos.set((Integer) heapList.get(pos1).id, pos1);
-        idPos.set((Integer) heapList.get(pos2).id, pos2);
+
+        // Update positions in the map
+        idPos.put(heapList.get(pos1).id, pos1);
+        idPos.put(heapList.get(pos2).id, pos2);
     }
 }
+
 
 class HeapElement<ID, Key extends Comparable<Key>> {
     ID id;
