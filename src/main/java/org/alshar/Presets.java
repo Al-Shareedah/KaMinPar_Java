@@ -56,7 +56,7 @@ public class Presets {
 
         // Set Partition Context
         ctx.partition = new PartitionContext();
-        ctx.partition.epsilon = 0.01;
+        ctx.partition.epsilon = 0.02;
         ctx.partition.k = new BlockID(Integer.MAX_VALUE); // kInvalidBlockID equivalent
 
         // Set block constraints
