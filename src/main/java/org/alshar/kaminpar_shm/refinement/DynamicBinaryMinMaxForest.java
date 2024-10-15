@@ -240,11 +240,22 @@ class DynamicBinaryMaxForest<ID, Key extends Comparable<Key>> {
     public void pop(int heap) {
         List<HeapElement<ID, Key>> heapList = heaps.get(heap);
         if (!heapList.isEmpty()) {
-            HeapElement<ID, Key> lastElement = heapList.get(heapList.size() - 1);
-            idPos.put(lastElement.id, 0);  // Update the position in the map
-            idPos.remove(heapList.get(0).id);  // Remove the old position from the map
-            heapList.set(0, lastElement);
+            // Step 1: Set the position of the back element to 0
+            HeapElement<ID, Key> backElement = heapList.get(heapList.size() - 1);
+            idPos.put(backElement.id, 0);  // Set the position of the back element to 0
+
+            // Step 2: Set the position of the front element to an invalid value (e.g., -1 or null)
+            HeapElement<ID, Key> frontElement = heapList.get(0);
+            idPos.put(frontElement.id, -1);  // Mark the front element as invalid (use null or a special value)
+
+            // Step 3: Swap the front element with the back element
+            heapList.set(0, backElement);
+            heapList.set(heapList.size() - 1, frontElement);  // Optional, but makes the next step clear
+
+            // Step 4: Remove the back element
             heapList.remove(heapList.size() - 1);
+
+            // Step 5: Sift down from the front to restore the heap property
             siftDown(heap, 0);
         }
     }

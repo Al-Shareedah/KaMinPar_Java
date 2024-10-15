@@ -242,17 +242,20 @@ public class GreedyBalancer extends Refiner {
                         for (Edge edge : pGraph.neighbors(u)) {
                             NodeID v = pGraph.edgeTarget(edge.getEdgeID());
                             if (!marker.get(v) && pGraph.block(v).equals(blockIDFrom)) {
+                                pq.checkInconsistencies();
                                 addToPQ(blockIDFrom, v);
                                 pq.checkInconsistencies();
                             }
                             marker.set(v.value, 0, false);
                         }
                     } else {
+                        pq.checkInconsistencies();
                         addToPQ(blockIDFrom, u, uWeight, actualRelGain);
                         pq.checkInconsistencies();
                     }
 
                 } else {
+                    pq.checkInconsistencies();
                     // Gain changed -> try again with the new gain
                     addToPQ(blockIDFrom, u, uWeight, actualRelGain);
                     pq.checkInconsistencies();
