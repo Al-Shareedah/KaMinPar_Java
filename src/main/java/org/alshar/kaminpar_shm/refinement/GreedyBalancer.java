@@ -170,6 +170,7 @@ public class GreedyBalancer extends Refiner {
             BlockID blockIDFrom = new BlockID(from);
             BlockWeight currentOverload = blockOverload(blockIDFrom);
             pq.checkInconsistencies();
+            pq.checkIdPosReferences();
             // Initialize feasible target blocks if necessary
             if (currentOverload.value > 0) {
                 List<BlockID> feasibleList = feasibleTargetBlocks.computeIfAbsent(blockIDFrom, key -> new ArrayList<>());
@@ -190,7 +191,9 @@ public class GreedyBalancer extends Refiner {
                 NodeWeight uWeight = pGraph.nodeWeight(u);
                 double expectedRelGain = pq.peekMaxKey(from);
                 pq.checkInconsistencies();
+                pq.checkIdPosReferences();
                 pq.popMax(from);
+                pq.checkIdPosReferences();
                 pq.checkInconsistencies();
                 pqWeight.set(from, new BlockWeight(pqWeight.get(from).value - uWeight.value));
                 assert marker.get(u);
@@ -243,7 +246,9 @@ public class GreedyBalancer extends Refiner {
                             NodeID v = pGraph.edgeTarget(edge.getEdgeID());
                             if (!marker.get(v) && pGraph.block(v).equals(blockIDFrom)) {
                                 pq.checkInconsistencies();
+                                pq.checkIdPosReferences();
                                 addToPQ(blockIDFrom, v);
+                                pq.checkIdPosReferences();
                                 pq.checkInconsistencies();
                             }
                             marker.set(v.value, 0, false);
@@ -444,9 +449,12 @@ public class GreedyBalancer extends Refiner {
             if (DEBUG) {
                 System.out.println("Add node " + u.value + " to PQ with block " + b.value + ", PQ weight " + pqWeight.get(b.value).value + ", rel gain " + relGain);
             }
-
+            pq.checkInconsistencies();
+            pq.checkIdPosReferences();
             // Push the node 'u' into the priority queue for block 'b' with the computed gain
             pq.push(b.value, u, relGain);
+            pq.checkIdPosReferences();
+            pq.checkInconsistencies();
             pqWeight.set(b.value, new BlockWeight(pqWeight.get(b.value).value + uWeight.value));
 
             // If the new relative gain exceeds the current minimum in the PQ, adjust the PQ
@@ -457,7 +465,11 @@ public class GreedyBalancer extends Refiner {
 
                 // If removing the minimum node still satisfies the overload constraint, pop it
                 if (pqWeight.get(b.value).value - minWeight.value >= blockOverload(b).value) {
+                    pq.checkInconsistencies();
+                    pq.checkIdPosReferences();
                     pq.popMin(b.value);
+                    pq.checkIdPosReferences();
+                    pq.checkInconsistencies();
                     pqWeight.set(b.value, new BlockWeight(pqWeight.get(b.value).value - minWeight.value));
                 }
             }

@@ -13,6 +13,39 @@ public class DynamicBinaryMinMaxForest<ID, Key extends Comparable<Key>> {
         this.maxForest = new DynamicBinaryMaxForest<>(capacity, heaps);
         this.minForest = new DynamicBinaryMinForest<>(capacity, heaps);
     }
+    public void checkIdPosReferences() {
+        // Iterate over all the heaps in both maxForest and minForest
+        int heapCount = Math.min(maxForest.heapsCount(), minForest.heapsCount());  // Ensure we're checking only valid heaps
+
+        for (int heap = 0; heap < heapCount; heap++) {
+            // Get the elements in both maxForest and minForest for the current heap
+            List<HeapElement<ID, Key>> maxElements = maxForest.elements(heap);
+            List<HeapElement<ID, Key>> minElements = minForest.elements(heap);
+
+            for (int pos = 0; pos < maxElements.size(); pos++) {
+                ID id = maxElements.get(pos).id;
+                Integer recordedPos = maxForest.idPos.get(id);
+
+                if (recordedPos == null || recordedPos != pos) {
+                    System.out.println("Inconsistency in maxForest for ID " + id + ":");
+                    System.out.println("  Expected position: " + pos + ", Recorded position: " + recordedPos);
+                }
+            }
+
+            // Check for minForest
+            for (int pos = 0; pos < minElements.size(); pos++) {
+                ID id = minElements.get(pos).id;
+                Integer recordedPos = minForest.idPos.get(id);
+
+                if (recordedPos == null || recordedPos != pos) {
+                    System.out.println("Inconsistency in minForest for ID " + id + ":");
+                    System.out.println("  Expected position: " + pos + ", Recorded position: " + recordedPos);
+                }
+            }
+        }
+    }
+
+
 
     public void checkInconsistencies() {
         // Get the actual number of heaps from the size of the heaps list
@@ -84,6 +117,7 @@ public class DynamicBinaryMinMaxForest<ID, Key extends Comparable<Key>> {
 
     public void push(int heap, NodeID id, Key key) {
         maxForest.push(heap, (ID) id, key);
+        this.checkIdPosReferences();
         minForest.push(heap, (ID) id, key);
     }
 
@@ -168,7 +202,7 @@ class DynamicBinaryMaxForest<ID, Key extends Comparable<Key>> {
 
     private final List<List<HeapElement<ID, Key>>> heaps;
     // Change from List<Integer> to Map<ID, Integer>
-    private final Map<ID, Integer> idPos;  // Map to store the position of each ID in the heap
+    public final Map<ID, Integer> idPos;  // Map to store the position of each ID in the heap
 
     public DynamicBinaryMaxForest(int capacity, int numHeaps) {
         this.heaps = new ArrayList<>(numHeaps);
@@ -233,32 +267,34 @@ class DynamicBinaryMaxForest<ID, Key extends Comparable<Key>> {
     }
 
     public void remove(int heap, ID id) {
-        decreasePriority(heap, id, heaps.get(heap).get(0).key);
+        decreasePriority(heap, id, (Key) Double.valueOf(Double.MAX_VALUE));
         pop(heap);
     }
 
     public void pop(int heap) {
         List<HeapElement<ID, Key>> heapList = heaps.get(heap);
+
         if (!heapList.isEmpty()) {
-            // Step 1: Set the position of the back element to 0
+            // Step 1: Set the position of the back element (last element) to 0 in idPos
             HeapElement<ID, Key> backElement = heapList.get(heapList.size() - 1);
             idPos.put(backElement.id, 0);  // Set the position of the back element to 0
 
-            // Step 2: Set the position of the front element to an invalid value (e.g., -1 or null)
+            // Step 2: Set the position of the front element (first element) to an invalid value (-1)
             HeapElement<ID, Key> frontElement = heapList.get(0);
-            idPos.put(frontElement.id, -1);  // Mark the front element as invalid (use null or a special value)
+            idPos.put(frontElement.id, -1);  // Mark the front element as invalid
 
             // Step 3: Swap the front element with the back element
             heapList.set(0, backElement);
-            heapList.set(heapList.size() - 1, frontElement);  // Optional, but makes the next step clear
+            heapList.set(heapList.size() - 1, frontElement);
 
-            // Step 4: Remove the back element
+            // Step 4: Remove the back element (which is now in the last position) from the heap
             heapList.remove(heapList.size() - 1);
 
             // Step 5: Sift down from the front to restore the heap property
             siftDown(heap, 0);
         }
     }
+
 
     public void clear(int heap) {
         List<HeapElement<ID, Key>> heapList = heaps.get(heap);
@@ -279,33 +315,46 @@ class DynamicBinaryMaxForest<ID, Key extends Comparable<Key>> {
     }
 
     private void siftUp(int heap, int pos) {
-        while (pos > 0) {
-            int parent = (pos - 1) / 2;
+        // Use kTreeArity = 4 (this means we will have four children at each level)
+        int kTreeArity = 4;
+
+        // Continue moving the element up until it reaches the root
+        while (pos != 0) {
+            int parent = (pos - 1) / kTreeArity;  // Parent index for 4-ary heap
+
+            // The comparator should ensure max-heap behavior, similar to the C++ logic
             if (heaps.get(heap).get(pos).key.compareTo(heaps.get(heap).get(parent).key) > 0) {
+                // Swap if the current element's key is greater than its parent's key
                 swap(heap, pos, parent);
-                pos = parent;
-            } else {
-                break;
             }
+            // Move the position to the parent
+            pos = parent;
         }
     }
 
+
     private void siftDown(int heap, int pos) {
         int size = heaps.get(heap).size();
-        while (pos < size / 2) {
-            int leftChild = 2 * pos + 1;
-            int rightChild = 2 * pos + 2;
-            int largest = leftChild;
-            if (rightChild < size && heaps.get(heap).get(rightChild).key.compareTo(heaps.get(heap).get(leftChild).key) > 0) {
-                largest = rightChild;
+        int kTreeArity = 4;  // Using 4-ary tree
+
+        while (pos < size / kTreeArity) {
+            int largest = pos;
+            for (int i = 1; i <= kTreeArity; i++) {
+                int child = kTreeArity * pos + i;
+                if (child < size && heaps.get(heap).get(child).key.compareTo(heaps.get(heap).get(largest).key) > 0) {
+                    largest = child;
+                }
             }
-            if (heaps.get(heap).get(pos).key.compareTo(heaps.get(heap).get(largest).key) >= 0) {
-                break;
+
+            if (largest == pos) {
+                break;  // Heap property is satisfied
             }
-            swap(heap, pos, largest);
-            pos = largest;
+
+            swap(heap, pos, largest);  // Swap with the largest child
+            pos = largest;  // Move the position down to continue sifting
         }
     }
+
 
     private void increasePriority(int heap, ID id, Key newKey) {
         int pos = idPos.get(id);  // Use the map to get the position
@@ -316,7 +365,7 @@ class DynamicBinaryMaxForest<ID, Key extends Comparable<Key>> {
     private void decreasePriority(int heap, ID id, Key newKey) {
         int pos = idPos.get(id);  // Use the map to get the position
         heaps.get(heap).get(pos).key = newKey;
-        siftDown(heap, pos);
+        siftUp(heap, pos);
     }
 
     private void swap(int heap, int pos1, int pos2) {
@@ -336,7 +385,7 @@ class DynamicBinaryMinForest<ID, Key extends Comparable<Key>> {
 
     private final List<List<HeapElement<ID, Key>>> heaps;
     // Change from List<Integer> to Map<ID, Integer>
-    private final Map<ID, Integer> idPos;  // Map to store the position of each ID in the heap
+    public final Map<ID, Integer> idPos;  // Map to store the position of each ID in the heap
 
     public DynamicBinaryMinForest(int capacity, int numHeaps) {
         this.heaps = new ArrayList<>(numHeaps);
@@ -401,32 +450,34 @@ class DynamicBinaryMinForest<ID, Key extends Comparable<Key>> {
     }
 
     public void remove(int heap, ID id) {
-        decreasePriority(heap, id, heaps.get(heap).get(0).key);
+        decreasePriority(heap, id, (Key) Double.valueOf(Double.NEGATIVE_INFINITY));
         pop(heap);
     }
 
     public void pop(int heap) {
         List<HeapElement<ID, Key>> heapList = heaps.get(heap);
+
         if (!heapList.isEmpty()) {
-            // Step 1: Set the position of the back element to 0
+            // Step 1: Set the position of the back element (last element) to 0 in idPos
             HeapElement<ID, Key> backElement = heapList.get(heapList.size() - 1);
             idPos.put(backElement.id, 0);  // Set the position of the back element to 0
 
-            // Step 2: Set the position of the front element to an invalid value (e.g., -1 or null)
+            // Step 2: Set the position of the front element (first element) to an invalid value (-1)
             HeapElement<ID, Key> frontElement = heapList.get(0);
-            idPos.put(frontElement.id, -1);  // Mark the front element as invalid (use null or a special value)
+            idPos.put(frontElement.id, -1);  // Mark the front element as invalid
 
             // Step 3: Swap the front element with the back element
             heapList.set(0, backElement);
-            heapList.set(heapList.size() - 1, frontElement);  // Optional, but makes the next step clear
+            heapList.set(heapList.size() - 1, frontElement);
 
-            // Step 4: Remove the back element
+            // Step 4: Remove the back element (which is now in the last position) from the heap
             heapList.remove(heapList.size() - 1);
 
             // Step 5: Sift down from the front to restore the heap property
             siftDown(heap, 0);
         }
     }
+
 
     public void clear(int heap) {
         List<HeapElement<ID, Key>> heapList = heaps.get(heap);
@@ -447,14 +498,15 @@ class DynamicBinaryMinForest<ID, Key extends Comparable<Key>> {
     }
 
     private void siftUp(int heap, int pos) {
-        while (pos > 0) {
-            int parent = (pos - 1) / 2;
-            if (heaps.get(heap).get(pos).key.compareTo(heaps.get(heap).get(parent).key) < 0) {
+        while (pos != 0) {
+            // Calculate the parent index for a 4-ary heap
+            int parent = (pos - 1) / 4;  // kTreeArity is 4
+
+            // Compare using > since it's a min-heap comparator in the C++ version
+            if (heaps.get(heap).get(parent).key.compareTo(heaps.get(heap).get(pos).key) > 0) {
                 swap(heap, pos, parent);
-                pos = parent;
-            } else {
-                break;
             }
+            pos = parent;
         }
     }
 
@@ -489,11 +541,13 @@ class DynamicBinaryMinForest<ID, Key extends Comparable<Key>> {
 
     private void swap(int heap, int pos1, int pos2) {
         List<HeapElement<ID, Key>> heapList = heaps.get(heap);
+
+        // Swap the elements in the heap
         HeapElement<ID, Key> temp = heapList.get(pos1);
         heapList.set(pos1, heapList.get(pos2));
         heapList.set(pos2, temp);
 
-        // Update positions in the map
+        // Swap the positions in the idPos map (this simulates the _id_pos in C++)
         idPos.put(heapList.get(pos1).id, pos1);
         idPos.put(heapList.get(pos2).id, pos2);
     }
