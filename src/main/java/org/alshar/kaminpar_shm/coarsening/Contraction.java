@@ -83,11 +83,12 @@ public class Contraction {
 
         // Allocation phase for buckets
         try (var allocationTimer = Timer_km.global().startScopedTimer("Allocation")) {
+            resizeIfNeeded(bucketsIndex, c_n + 1);
             // Prepare bucketsIndex
             for (int i = 0; i < c_n + 1; i++) {
                 bucketsIndex.set(i, new AtomicInteger(0));
             }
-            resizeIfNeeded(bucketsIndex, c_n + 1);
+
         }
 
         // Preprocessing phase for buckets

@@ -13,6 +13,7 @@ import org.alshar.kaminpar_shm.initialPartitioning.InitialPartitioner;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
@@ -25,9 +26,20 @@ import static org.alshar.kaminpar_shm.PartitionUtils.computeMaxClusterWeight;
 public class Helper {
 
     public static void updatePartitionContext(PartitionContext currentPCtx, PartitionedGraph pGraph, BlockID inputK) {
+        currentPCtx.resetBlockWeightFlags();
         currentPCtx.setup(pGraph.getGraph());
         currentPCtx.k = pGraph.k();
-        currentPCtx.blockWeights.setup(currentPCtx, inputK.value);
+        // Copy block weights from pGraph to currentPCtx
+        currentPCtx.blockWeights.maxBlockWeights = new ArrayList<>(pGraph.blockWeights.size());
+        currentPCtx.blockWeights.perfectlyBalancedBlockWeights = new ArrayList<>(pGraph.blockWeights.size());
+
+        // Copy block weights from pGraph's blockWeights array to currentPCtx.blockWeights
+        for (int i = 0; i < pGraph.blockWeights.size(); i++) {
+            BlockWeight blockWeight = pGraph.blockWeights.get(i);
+            currentPCtx.blockWeights.perfectlyBalancedBlockWeights.add(new BlockWeight(blockWeight.value));
+            long maxBlockWeight = (long) ((1.0 + currentPCtx.epsilon) * blockWeight.value);
+            currentPCtx.blockWeights.maxBlockWeights.add(new BlockWeight(maxBlockWeight));
+        }
     }
 
     public static PartitionedGraph uncoarsenOnce(Coarsener coarsener, PartitionedGraph pGraph, PartitionContext currentPCtx, PartitionContext inputPCtx) {
@@ -54,61 +66,9 @@ public class Helper {
 
     public static PartitionedGraph bipartition(Graph graph, BlockID finalK, Context inputCtx, GlobalInitialPartitionerMemoryPool ipMCtxPool) {
         // Create the InitialPartitioner
-        InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx, finalK, ipMCtxPool.local().get());
 
-        // Access the block constraints from inputCtx.partition without using poll
-        Queue<BlockWeight> blockConstraints = inputCtx.partition.blockConstraints;
-
-        if (blockConstraints != null && !blockConstraints.isEmpty()) {
-            // Copy the block constraints into a list
-            List<BlockWeight> blockConstraintList = new ArrayList<>(blockConstraints);
-
-            // Combine block weights into 2 blocks
-            List<BlockWeight> combinedPerfectlyBalancedWeights = new ArrayList<>();
-            long firstBlockWeightValue = 0;
-            long secondBlockWeightValue = 0;
-
-            // Iterate over the copied list and combine all block weights into 2 sums
-            for (int i = 0; i < blockConstraintList.size(); i++) {
-                if (i % 2 == 0) {
-                    firstBlockWeightValue += blockConstraintList.get(i).value;
-                } else {
-                    secondBlockWeightValue += blockConstraintList.get(i).value;
-                }
-            }
-
-            combinedPerfectlyBalancedWeights.add(new BlockWeight(firstBlockWeightValue));
-            combinedPerfectlyBalancedWeights.add(new BlockWeight(secondBlockWeightValue));
-
-            // Now calculate the max block weights
-            List<BlockWeight> combinedMaxWeights = new ArrayList<>();
-            double epsilon = partitioner.p_ctx.epsilon;
-            NodeWeight maxNodeWeight = partitioner.p_ctx.maxNodeWeight;
-
-            long maxFirstBlockWeight = (long) ((1.0 + epsilon) * firstBlockWeightValue);
-            long maxSecondBlockWeight = (long) ((1.0 + epsilon) * secondBlockWeightValue);
-
-            if (maxNodeWeight.value == 1) {
-                combinedMaxWeights.add(new BlockWeight(maxFirstBlockWeight));
-                combinedMaxWeights.add(new BlockWeight(maxSecondBlockWeight));
-            } else {
-                combinedMaxWeights.add(new BlockWeight(Math.max(maxFirstBlockWeight, firstBlockWeightValue + maxNodeWeight.value)));
-                combinedMaxWeights.add(new BlockWeight(Math.max(maxSecondBlockWeight, secondBlockWeightValue + maxNodeWeight.value)));
-            }
-
-            // Assign the combined block weights to the partitioner's context
-            partitioner.p_ctx.blockWeights.perfectlyBalancedBlockWeights = combinedPerfectlyBalancedWeights;
-            partitioner.p_ctx.blockWeights.maxBlockWeights = combinedMaxWeights;
-
-            // Assign the combined block weights and max block weights to the new variables
-            inputCtx.partition.bipartition_blockWeights[0] = new BlockWeight(firstBlockWeightValue);
-            inputCtx.partition.bipartition_blockWeights[1] = new BlockWeight(secondBlockWeightValue);
-            inputCtx.partition.bipartition_MaxblockWeights[0] = new BlockWeight(maxFirstBlockWeight);
-            inputCtx.partition.bipartition_MaxblockWeights[1] = new BlockWeight(maxSecondBlockWeight);
-
-
-        }
-
+        InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx, finalK, ipMCtxPool.local().get(),true );
+        inputCtx.partition.combinedBlockWeights = partitioner.p_ctx.combinedBlockWeights;
         // Perform the partitioning
         PartitionedGraph pGraph = partitioner.partition();
 
@@ -122,7 +82,7 @@ public class Helper {
             Graph graph, BlockID finalK, Context inputCtx, GlobalInitialPartitionerMemoryPool ipMCtxPool) {
 
         // Call the modified InitialPartitioner constructor
-        InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx, finalK, ipMCtxPool.local().get(), true);
+        InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx, finalK, ipMCtxPool.local().get());
         PartitionedGraph pGraph = partitioner.partition();
         ipMCtxPool.local().put(partitioner.free());
 

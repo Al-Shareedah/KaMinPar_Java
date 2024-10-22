@@ -46,6 +46,49 @@ public class DynamicBinaryMinMaxForest<ID, Key extends Comparable<Key>> {
     }
 
 
+    public void checkDuplicateNodeIDs() {
+        // Iterate over all heaps in both maxForest and minForest
+        int heapCount = Math.min(maxForest.heapsCount(), minForest.heapsCount());  // Ensure we're checking only valid heaps
+
+        for (int heap = 0; heap < heapCount; heap++) {
+            // Get the elements in maxForest for the current heap
+            List<HeapElement<ID, Key>> maxElements = maxForest.elements(heap);
+            Map<ID, Integer> maxForestIDCounts = new HashMap<>();  // Store counts of each ID in maxForest
+
+            // Check for multiple occurrences of the same NodeID in maxForest
+            for (HeapElement<ID, Key> element : maxElements) {
+                ID id = element.id;
+                maxForestIDCounts.put(id, maxForestIDCounts.getOrDefault(id, 0) + 1);
+            }
+
+            // Print duplicate NodeIDs found in maxForest for the current heap
+            for (Map.Entry<ID, Integer> entry : maxForestIDCounts.entrySet()) {
+                if (entry.getValue() > 1) {
+                    System.out.println("Multiple elements with NodeID " + entry.getKey() + " found in maxForest heap " + heap);
+                }
+            }
+        }
+
+        for (int heap = 0; heap < heapCount; heap++) {
+            // Get the elements in minForest for the current heap
+            List<HeapElement<ID, Key>> minElements = minForest.elements(heap);
+            Map<ID, Integer> minForestIDCounts = new HashMap<>();  // Store counts of each ID in minForest
+
+            // Check for multiple occurrences of the same NodeID in minForest
+            for (HeapElement<ID, Key> element : minElements) {
+                ID id = element.id;
+                minForestIDCounts.put(id, minForestIDCounts.getOrDefault(id, 0) + 1);
+            }
+
+            // Print duplicate NodeIDs found in minForest for the current heap
+            for (Map.Entry<ID, Integer> entry : minForestIDCounts.entrySet()) {
+                if (entry.getValue() > 1) {
+                    System.out.println("Multiple elements with NodeID " + entry.getKey() + " found in minForest heap " + heap);
+                }
+            }
+        }
+    }
+
 
     public void checkInconsistencies() {
         // Get the actual number of heaps from the size of the heaps list

@@ -11,7 +11,7 @@ import java.util.stream.IntStream;
 public class PartitionedGraph extends GraphDelegate {
     private BlockID k;
     private StaticArray<BlockID> partition;
-    private StaticArray<BlockWeight> blockWeights;
+    public StaticArray<BlockWeight> blockWeights;
 
     // Parallel constructor
     public PartitionedGraph(Graph graph, BlockID k, StaticArray<BlockID> partition) {
@@ -47,8 +47,8 @@ public class PartitionedGraph extends GraphDelegate {
     public boolean move(NodeID u, BlockID from, BlockID to, BlockWeight maxToWeight) {
         // Explicitly convert NodeWeight to BlockWeight
         BlockWeight delta = new BlockWeight(nodeWeight(u).value);
-        if (moveBlockWeight(from, to, delta, maxToWeight)) {
-            setBlock(u, to);
+        if (moveBlockWeight2(from, to, delta, maxToWeight)) {
+            setBlock2(u, to);
             return true;
         }
         return false;
@@ -62,6 +62,28 @@ public class PartitionedGraph extends GraphDelegate {
         }
         increaseBlockWeight(to, weight);
         partition.set(u.value, to);
+    }
+    public <T> void setBlock2(NodeID u, BlockID to) {
+        // Update the partition by setting the new block for node 'u'
+        partition.set(u.value, to);
+    }
+
+    public boolean moveBlockWeight2(BlockID from, BlockID to, BlockWeight delta, BlockWeight maxToWeight) {
+        // Directly access and modify the block weights in the StaticArray
+        long newToWeight = blockWeights.get(to.value).getValue();
+
+        // Ensure the target block doesn't exceed its maximum weight
+        if (newToWeight + delta.getValue() <= maxToWeight.getValue()) {
+            // Increase the weight of the target block
+            blockWeights.set(to.value, new BlockWeight(newToWeight + delta.getValue()));
+
+            // Decrease the weight of the source block
+            decreaseBlockWeight(from, delta);
+
+            return true;
+        } else {
+            return false;  // If the target block exceeds its weight, the move is not allowed
+        }
     }
 
     public boolean moveBlockWeight(BlockID from, BlockID to, BlockWeight delta, BlockWeight maxToWeight) {
@@ -184,6 +206,45 @@ public class PartitionedGraph extends GraphDelegate {
         return temp;
     }
 
+    public StaticArray<BlockWeight> getBlockWeights() {
+        return blockWeights;
+    }
 
+    public void setBlockWeights(StaticArray<BlockWeight> blockWeights) {
+        this.blockWeights = blockWeights;
+    }
+    public boolean checkPartitionWeights() {
+        // Create an array to store the computed sum of node weights for each block
+        StaticArray<BlockWeight> computedBlockWeights = new StaticArray<>(k.value);
+
+        // Initialize the computed block weights to zero
+        for (int i = 0; i < k.value; i++) {
+            computedBlockWeights.set(i, new BlockWeight(0));
+        }
+
+        // Iterate over all nodes and sum the node weights for each partition (block)
+        for (int u = 0; u < graph.n().value; u++) {
+            NodeID nodeID = new NodeID(u);
+            BlockID blockID = partition.get(u);  // Get the block (partition) the node belongs to
+            NodeWeight nodeWeight = nodeWeight(nodeID);  // Get the node's weight
+
+            // Add the node's weight to the corresponding block's computed weight
+            BlockWeight currentComputedWeight = computedBlockWeights.get(blockID.value);
+            computedBlockWeights.set(blockID.value, new BlockWeight(currentComputedWeight.getValue() + nodeWeight.value));
+        }
+
+        // Compare the computed block weights with the actual block weights
+        for (int i = 0; i < k.value; i++) {
+            if (computedBlockWeights.get(i).getValue() != blockWeights.get(i).getValue()) {
+                System.out.println("Mismatch in block " + i + ": Computed = "
+                        + computedBlockWeights.get(i).getValue()
+                        + ", blockWeights = " + blockWeights.get(i).getValue());
+                return false;  // Return false if any block's weight doesn't match
+            }
+        }
+
+        // If all block weights match, return true
+        return true;
+    }
 
 }

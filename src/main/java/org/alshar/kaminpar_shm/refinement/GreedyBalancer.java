@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class GreedyBalancer extends Refiner {
 
@@ -124,7 +125,7 @@ public class GreedyBalancer extends Refiner {
         }
 
         // Calculate the initial edge cut (only for debugging)
-        //EdgeWeight initialCut = DEBUG ? Metrics.edgeCut(pGraph) : null;
+        EdgeWeight initialCut = DEBUG ? Metrics.edgeCut(pGraph) : null;
 
         // Initialize the priority queue
         initPQ();
@@ -134,12 +135,17 @@ public class GreedyBalancer extends Refiner {
 
         // Calculate the new overload after the balancing round
         NodeWeight newOverload = new NodeWeight(initialOverload.value - delta.value);
+        // If there's still overload after two rounds, run the fallback method to fix it
+        if (newOverload.value != 0) {
+            initPQ();
+            forcefullyResolveOverload(pGraph, pCtx);
+        }
 
         // Print debug information if necessary
-        if (DEBUG) {
-            EdgeWeight newCut = Metrics.edgeCut(pGraph);
-            //System.out.println("-> Balancer: cut=" + initialCut + ", new cut=" + newCut);
-        }
+
+        EdgeWeight newCut = Metrics.edgeCut(pGraph);
+        //System.out.println("-> Balancer: cut=" + initialCut + ", new cut=" + newCut);
+
 
         // Print statistics if enabled
         if (STATISTICS) {
@@ -158,128 +164,268 @@ public class GreedyBalancer extends Refiner {
             stats.initialOverload = Metrics.totalOverload(pGraph, pCtx).value;
         }
 
-
         // Reset feasible target blocks
         feasibleTargetBlocks.forEach((blockID, blockList) -> blockList.clear());
 
-        // Thread-local tracking of overload delta (no longer needed as a ThreadLocal)
-        BlockWeight overloadDelta = new BlockWeight(0);
+        // Thread-safe tracking of overload delta
+        AtomicLong globalOverload = new AtomicLong(0);
+        // Main loop: Parallel processing of each block
+        ParallelFor.parallelFor(0, pGraph.k().value, 1, (start, end) -> {
+            for (int from = start; from < end; ++from) {
+                BlockID blockIDFrom = new BlockID(from);
+                BlockWeight currentOverload = blockOverload(blockIDFrom);
 
-        // Main loop: Sequential processing of each block (replacing parallelFor)
-        for (int from = 0; from < pGraph.k().value; ++from) {
-            BlockID blockIDFrom = new BlockID(from);
-            BlockWeight currentOverload = blockOverload(blockIDFrom);
-            pq.checkInconsistencies();
-            pq.checkIdPosReferences();
-            // Initialize feasible target blocks if necessary
-            if (currentOverload.value > 0) {
-                List<BlockID> feasibleList = feasibleTargetBlocks.computeIfAbsent(blockIDFrom, key -> new ArrayList<>());
+                // Initialize feasible target blocks if necessary
+                if (currentOverload.value > 0) {
+                    List<BlockID> feasibleList = feasibleTargetBlocks.computeIfAbsent(blockIDFrom, key -> new ArrayList<>());
 
-                if (feasibleList.isEmpty()) {
-                    initFeasibleTargetBlocks();
-                    if (DEBUG) {
-                        System.out.println("Block " + blockIDFrom.value + " with overload: " + currentOverload.value + ": " +
-                                feasibleList.size() + " feasible target blocks and " +
-                                pq.size(blockIDFrom.value) + " nodes in PQ. Total weight of PQ is " + pqWeight.get(blockIDFrom.value).value);
+                    if (feasibleList.isEmpty()) {
+                        initFeasibleTargetBlocks();
+                        if (DEBUG) {
+                            /*
+                            System.out.println("Block " + blockIDFrom.value + " with overload: " + currentOverload.value + ": " +
+                                    feasibleList.size() + " feasible target blocks and " +
+                                    pq.size(blockIDFrom.value) + " nodes in PQ. Total weight of PQ is " + pqWeight.get(blockIDFrom.value).value);
+                             */
+                        }
                     }
                 }
-            }
-            pq.checkInconsistencies();
-            // Continue until the block's overload is resolved or its PQ is empty
-            while (currentOverload.value > 0 && !pq.empty(from)) {
-                NodeID u = pq.peekMaxId(from);
-                NodeWeight uWeight = pGraph.nodeWeight(u);
-                double expectedRelGain = pq.peekMaxKey(from);
-                pq.checkInconsistencies();
-                pq.checkIdPosReferences();
-                pq.popMax(from);
-                pq.checkIdPosReferences();
-                pq.checkInconsistencies();
-                pqWeight.set(from, new BlockWeight(pqWeight.get(from).value - uWeight.value));
-                assert marker.get(u);
 
-                // Compute the gain and attempt to move the node
-                Pair<BlockID, Double> gainPair = computeGain(u, blockIDFrom);
-                BlockID toBlock = gainPair.getKey();
-                double actualRelGain = gainPair.getValue();
+                // Continue until the block's overload is resolved or its PQ is empty
+                while (currentOverload.value > 0 && !pq.empty(from)) {
+                    NodeID u = pq.peekMaxId(from);
+                    NodeWeight uWeight = pGraph.nodeWeight(u);
+                    double expectedRelGain = pq.peekMaxKey(from);
+                    pq.popMax(from);
+                    pqWeight.set(from, new BlockWeight(pqWeight.get(from).value - uWeight.value));
+                    assert marker.get(u);
 
-                // Gain is correct -> try moving the node
-                if (expectedRelGain == actualRelGain) {
-                    boolean movedNode = false;
+                    // Compute the gain and attempt to move the node
+                    Pair<BlockID, Double> gainPair = computeGain(u, blockIDFrom);
+                    BlockID toBlock = gainPair.getKey();
+                    double actualRelGain = gainPair.getValue();
 
-                    // Internal node -> move to a random underloaded block
-                    if (toBlock.equals(blockIDFrom)) {
-                        movedNode = moveToRandomBlock(u);
-                        if (STATISTICS) {
-                            if (movedNode) {
-                                stats.numSuccessfulRandomMoves.incrementAndGet();
-                            } else {
-                                stats.numUnsuccessfulRandomMoves.incrementAndGet();
+                    // Gain is correct -> try moving the node
+                    if (expectedRelGain == actualRelGain) {
+                        boolean movedNode = false;
+
+                        // Internal node -> move to a random underloaded block
+                        if (toBlock.equals(blockIDFrom)) {
+                            movedNode = moveToRandomBlock(u);
+                            if (STATISTICS) {
+                                if (movedNode) {
+                                    stats.numSuccessfulRandomMoves.incrementAndGet();
+                                } else {
+                                    stats.numUnsuccessfulRandomMoves.incrementAndGet();
+                                }
+                                stats.numMovedInternalNodes.incrementAndGet();
                             }
-                            stats.numMovedInternalNodes.incrementAndGet();
+
+                            // Border node -> move to a promising block
+                        } else if (moveNodeIfPossible(u, blockIDFrom, toBlock)) {
+                            movedNode = true;
+                            if (STATISTICS) {
+                                stats.numMovedBorderNodes.incrementAndGet();
+                                stats.numSuccessfulAdjacentMoves.incrementAndGet();
+                            }
+
+                            // Border node could not be moved -> try again
+                        } else {
+                            if (STATISTICS) {
+                                stats.numPQReinserts.incrementAndGet();
+                                stats.numUnsuccessfulAdjacentMoves.incrementAndGet();
+                            }
                         }
 
-                        // Border node -> move to a promising block
-                    } else if (moveNodeIfPossible(u, blockIDFrom, toBlock)) {
-                        movedNode = true;
-                        if (STATISTICS) {
-                            stats.numMovedBorderNodes.incrementAndGet();
-                            stats.numSuccessfulAdjacentMoves.incrementAndGet();
+                        // Update overload if the node was successfully moved
+                        if (movedNode) {
+                            BlockWeight delta = new BlockWeight(Math.min(currentOverload.value, uWeight.value));
+                            currentOverload = new BlockWeight(currentOverload.value - delta.value);
+                            globalOverload.addAndGet(delta.value);
+
+                            // Try adding the neighbors of the moved node to the PQ
+                            for (Edge edge : pGraph.neighbors(u)) {
+                                NodeID v = pGraph.edgeTarget(edge.getEdgeID());
+                                if (!marker.get(v) && pGraph.block(v).equals(blockIDFrom)) {
+                                    addToPQ(blockIDFrom, v);
+                                }
+                                marker.set(v.value, 0, false);
+                            }
+                        } else {
+                            addToPQ(blockIDFrom, u, uWeight, actualRelGain);
                         }
 
-                        // Border node could not be moved -> try again
                     } else {
+                        // Gain changed -> try again with the new gain
+                        addToPQ(blockIDFrom, u, uWeight, actualRelGain);
                         if (STATISTICS) {
                             stats.numPQReinserts.incrementAndGet();
-                            stats.numUnsuccessfulAdjacentMoves.incrementAndGet();
                         }
-                    }
-
-                    // Update overload if the node was successfully moved
-                    if (movedNode) {
-                        BlockWeight delta = new BlockWeight(Math.min(currentOverload.value, uWeight.value));
-                        currentOverload = new BlockWeight(currentOverload.value - delta.value);
-                        overloadDelta = new BlockWeight(overloadDelta.value + delta.value);
-
-                        // Try adding the neighbors of the moved node to the PQ
-                        for (Edge edge : pGraph.neighbors(u)) {
-                            NodeID v = pGraph.edgeTarget(edge.getEdgeID());
-                            if (!marker.get(v) && pGraph.block(v).equals(blockIDFrom)) {
-                                pq.checkInconsistencies();
-                                pq.checkIdPosReferences();
-                                addToPQ(blockIDFrom, v);
-                                pq.checkIdPosReferences();
-                                pq.checkInconsistencies();
-                            }
-                            marker.set(v.value, 0, false);
-                        }
-                    } else {
-                        pq.checkInconsistencies();
-                        addToPQ(blockIDFrom, u, uWeight, actualRelGain);
-                        pq.checkInconsistencies();
-                    }
-
-                } else {
-                    pq.checkInconsistencies();
-                    // Gain changed -> try again with the new gain
-                    addToPQ(blockIDFrom, u, uWeight, actualRelGain);
-                    pq.checkInconsistencies();
-                    if (STATISTICS) {
-                        stats.numPQReinserts.incrementAndGet();
                     }
                 }
+
+                // Ensure the block overload matches expectations after processing
+                assert currentOverload.value == Math.max(0,
+                        pGraph.blockWeight(blockIDFrom).value - pCtx.blockWeights.max(from).value);
             }
-
-            // Ensure the block overload matches expectations after processing
-            assert currentOverload.value == Math.max(0,
-                    pGraph.blockWeight(blockIDFrom).value - pCtx.blockWeights.max(from).value);
-        }
-
-        // Combine the overload deltas across all threads (since it's sequential now, no threads)
-        BlockWeight globalOverloadDelta = new BlockWeight(overloadDelta.value);
+        });
+        // Combine the overload deltas across all threads
+        BlockWeight globalOverloadDelta = new BlockWeight(globalOverload.get());
         return globalOverloadDelta;
     }
 
+    private void forcefullyResolveOverload(PartitionedGraph pGraph, PartitionContext pCtx) {
+        boolean hasOverload = true;
+        // Continue iterating over the blocks until all have no overload
+        while (hasOverload) {
+            hasOverload = false;
+
+            // Sequentially iterate over each block
+            for (int fromBlockID = 0; fromBlockID < pGraph.k().value; fromBlockID++) {
+                BlockID fromBlock = new BlockID(fromBlockID);
+                BlockWeight currentOverload = blockOverload2(fromBlock);
+
+                // Skip blocks with no overload and no underload
+                if (currentOverload.value <= 0 && !isUnderloaded(pGraph, pCtx, fromBlock)) {
+                    continue; // Block is balanced, so skip it
+                }
+
+                // If the block is still overloaded, move the remaining nodes forcefully
+                if (currentOverload.value > 0) {
+                    hasOverload = true; // Set the flag to true to indicate there is still overload
+                    List<BlockID> targetBlocks = findUnderloadedBlocks(pGraph, pCtx, fromBlock);
+
+                    // If there are no underloaded blocks, skip this block
+                    if (targetBlocks.isEmpty()) {
+                        continue; // No targets to move to
+                    }
+
+                    while (currentOverload.value > 0 && !targetBlocks.isEmpty()) {
+                        // Select a node to move (even if it increases the edge cut)
+                        NodeID u = selectNodeToMove(pGraph, fromBlock);
+                        // Forcefully move the node to the best possible underloaded block
+                        boolean moved = false;
+                        for (BlockID toBlock : targetBlocks) {
+                            if (isUnderloaded(pGraph, pCtx, toBlock) && moveNodeForcefully(u, fromBlock)) {
+                                NodeWeight uWeight = pGraph.nodeWeight(u);
+                                BlockWeight delta = new BlockWeight(Math.min(currentOverload.value, uWeight.value));
+                                currentOverload = new BlockWeight(currentOverload.value - delta.value);
+                                moved = true;
+                                break; // Stop once we successfully move the node
+                            }
+                        }
+
+                        // If we couldn't move the node, break the loop to avoid infinite loops
+                        if (!moved) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    private BlockWeight blockOverload2(BlockID blockID) {
+        long blockWeight = pGraph.blockWeight(blockID).value;
+        long maxBlockWeight = pCtx.blockWeights.max(blockID.value).value;
+        long overload = Math.max(0, blockWeight - maxBlockWeight);
+        return new BlockWeight(overload);
+    }
+    private List<BlockID> findUnderloadedBlocks(PartitionedGraph pGraph, PartitionContext pCtx, BlockID fromBlock) {
+        List<BlockID> underloadedBlocks = new ArrayList<>();
+
+        for (BlockID blockID : pGraph.blocks()) {
+            if (!blockID.equals(fromBlock)) {
+                long blockWeight = pGraph.blockWeight(blockID).value;
+                long maxBlockWeight = pCtx.blockWeights.max(blockID.value).value;
+                if (blockWeight < maxBlockWeight) {
+                    underloadedBlocks.add(blockID); // This block can accept more nodes
+                }
+            }
+        }
+        return underloadedBlocks;
+    }
+    private NodeID selectNodeToMove(PartitionedGraph pGraph, BlockID fromBlock) {
+        // Retrieve the node with the highest priority from the PQ if available
+        while (!pq.empty(fromBlock.value)) {
+            NodeID candidate = pq.peekMaxId(fromBlock.value);
+            if (!pGraph.block(candidate).equals(fromBlock)) {
+                pq.popMax(fromBlock.value);  // Remove if the node is no longer in the block
+            } else {
+                return candidate;  // Return the valid candidate
+            }
+        }
+
+        // If the PQ is empty, find a node that would increase the edge cut the least
+        NodeID bestNode = null;
+        double bestGain = Double.NEGATIVE_INFINITY;  // Gain is negative when moving a node increases the edge cut
+
+        // Define a threshold for minimum acceptable edge cut loss
+        double minEdgeCutLossThreshold = -5.0;  // Loss threshold (e.g., forcefully moving a node will cause <= 5 loss)
+
+        // Iterate over all nodes in the block to calculate the gain for each node
+        for (int u = 0; u < pGraph.n().value; u++) {
+            NodeID node = new NodeID(u);
+            if (!pGraph.block(node).equals(fromBlock)) {
+                continue;  // Skip nodes that don't belong to the current block
+            }
+
+            // Compute the gain for this node
+            Pair<BlockID, Double> gainPair = computeGain(node, fromBlock);
+            double gain = gainPair.getValue();
+
+            // Select the node with the best (least negative or highest positive) gain
+            if (gain > bestGain) {
+                bestGain = gain;
+                bestNode = node;
+
+                // If the gain is greater than the threshold (meaning a very minimal loss), return the node early
+                if (gain >= minEdgeCutLossThreshold) {
+                    return bestNode;  // No need to search further, as the node has minimal impact
+                }
+            }
+        }
+
+        return bestNode;  // Return the node that causes the least negative gain (or best gain)
+    }
+
+
+    private boolean moveNodeForcefully(NodeID u, BlockID fromBlock) {
+        List<BlockID> targetBlocks = feasibleTargetBlocks.get(fromBlock);
+
+        // If the target block list is null or empty, attempt to find new target blocks
+        if (targetBlocks == null || targetBlocks.isEmpty()) {
+            targetBlocks = findUnderloadedBlocks(pGraph, pCtx, fromBlock);
+
+            // If we still don't find any valid target blocks, return false
+            if (targetBlocks.isEmpty()) {
+                return false;
+            }
+        }
+
+        // Try moving the node to any feasible block, even if it results in a higher edge cut
+        for (BlockID toBlock : targetBlocks) {
+            if (isUnderloaded(pGraph, pCtx, toBlock)) {
+                BlockWeight maxToWeight = pCtx.blockWeights.max(toBlock.value);
+
+                // Use the existing move method to transfer the node
+                if (pGraph.move(u, fromBlock, toBlock, maxToWeight)) {
+                    return true;  // Move was successful
+                }
+            }
+        }
+
+        // If all moves fail, return false
+        return false;
+    }
+
+
+    private boolean isUnderloaded(PartitionedGraph pGraph, PartitionContext pCtx, BlockID block) {
+        long blockWeight = pGraph.blockWeight(block).value;
+        long maxBlockWeight = pCtx.blockWeights.max(block.value).value;
+        return blockWeight < maxBlockWeight;
+    }
 
 
     private boolean moveNodeIfPossible(NodeID u, BlockID from, BlockID to) {
@@ -295,16 +441,30 @@ public class GreedyBalancer extends Refiner {
 
 
     private boolean moveToRandomBlock(NodeID u) {
-        // Get the feasible target blocks for the current thread
-        List<BlockID> feasibleTargetBlocksList = feasibleTargetBlocks.get(Thread.currentThread().getId());
+        // Get all feasible target blocks from the available blocks
+        List<BlockID> allFeasibleTargetBlocks = new ArrayList<>();
+
+        // Collect all non-empty feasible target blocks from the map
+        feasibleTargetBlocks.forEach((blockID, blockList) -> {
+            if (!blockList.isEmpty()) {
+                allFeasibleTargetBlocks.addAll(blockList);
+            }
+        });
+
+        // If no feasible target blocks are available, return false
+        if (allFeasibleTargetBlocks.isEmpty()) {
+            return false;
+        }
 
         BlockID uBlock = pGraph.block(u);
         Random_shm random = Random_shm.getInstance();
-        while (!feasibleTargetBlocksList.isEmpty()) {
-            // Select a random index in the feasible target blocks list
-            int n = feasibleTargetBlocksList.size();
+
+        // Continue until a move is successful or all blocks are tried
+        while (!allFeasibleTargetBlocks.isEmpty()) {
+            // Select a random index in the list of feasible target blocks
+            int n = allFeasibleTargetBlocks.size();
             int i = random.randomIndex(0, n);
-            BlockID targetBlock = feasibleTargetBlocksList.get(i);
+            BlockID targetBlock = allFeasibleTargetBlocks.get(i);
 
             // Attempt to move the node to the target block
             if (moveNodeIfPossible(u, uBlock, targetBlock)) {
@@ -312,8 +472,8 @@ public class GreedyBalancer extends Refiner {
             }
 
             // If the move fails, remove the target block from the list and continue
-            Collections.swap(feasibleTargetBlocksList, i, n - 1);
-            feasibleTargetBlocksList.remove(n - 1);
+            Collections.swap(allFeasibleTargetBlocks, i, n - 1);
+            allFeasibleTargetBlocks.remove(n - 1);
         }
 
         // Return false if no feasible move was possible
@@ -332,91 +492,96 @@ public class GreedyBalancer extends Refiner {
         }
 
         // Step 1: Local priority queues for each block
-        // Replacing parallel processing with sequential processing
-        for (int u = 0; u < pGraph.n().value; u++) {
-            NodeID nodeID = new NodeID(u);
-            BlockID blockID = pGraph.block(nodeID);
-            BlockWeight overload = blockOverload(blockID);
+        ParallelFor.parallelFor(0, pGraph.n().value, 1, (start, end) -> {
+            // Thread-local PQs for this thread
+            List<DynamicBinaryHeap<NodeID, Double>> localPQ = new ArrayList<>(pGraph.k().value);
+            List<BlockWeight> localPQWeight = new ArrayList<>(pGraph.k().value);
 
-            if (overload.value > 0) { // Node in overloaded block
-                Pair<BlockID, Double> gainPair = computeGain(nodeID, blockID);
-                BlockID maxGainer = gainPair.getKey();
-                double relGain = gainPair.getValue();
+            for (int i = 0; i < pGraph.k().value; i++) {
+                localPQ.add(new DynamicBinaryHeap<>(Double::compare)); // Initialize local PQ
+                localPQWeight.add(new BlockWeight(0)); // Initialize local PQ weight tracker
+            }
 
-                // Get or create local PQ and weight for this block
-                DynamicBinaryHeap<NodeID, Double> localPQ = sharedLocalPQ.get(blockID.value).isEmpty()
-                        ? new DynamicBinaryHeap<>(Double::compare)
-                        : sharedLocalPQ.get(blockID.value).get(0);
+            for (int u = start; u < end; u++) {
+                NodeID nodeID = new NodeID(u);
+                BlockID blockID = pGraph.block(nodeID);
+                BlockWeight overload = blockOverload(blockID);
 
-                BlockWeight localPQWeight = sharedLocalPQWeight.get(blockID.value).isEmpty()
-                        ? new BlockWeight(0)
-                        : sharedLocalPQWeight.get(blockID.value).get(0);
+                if (overload.value > 0) { // Node in overloaded block
+                    Pair<BlockID, Double> gainPair = computeGain(nodeID, blockID);
+                    BlockID maxGainer = gainPair.getKey();
+                    double relGain = gainPair.getValue();
 
-                boolean needMoreNodes = localPQWeight.value < overload.value;
-                if (needMoreNodes || localPQ.isEmpty() || relGain > localPQ.peekKey()) {
-                    // If needed, pop and replace nodes with lower gain
-                    if (!needMoreNodes) {
-                        NodeWeight uWeight = pGraph.nodeWeight(nodeID);
-                        NodeWeight minWeight = pGraph.nodeWeight(new NodeID(localPQ.peekId().value));
-                        if (localPQWeight.value + uWeight.value - minWeight.value >= overload.value) {
-                            localPQ.pop();
+                    boolean needMoreNodes = localPQWeight.get(blockID.value).value < overload.value;
+                    if (needMoreNodes || localPQ.get(blockID.value).isEmpty() || relGain > localPQ.get(blockID.value).peekKey()) {
+                        // If needed, pop and replace nodes with lower gain
+                        if (!needMoreNodes) {
+                            NodeWeight uWeight = pGraph.nodeWeight(nodeID);
+                            NodeWeight minWeight = pGraph.nodeWeight(new NodeID(localPQ.get(blockID.value).peekId().value));
+                            if (localPQWeight.get(blockID.value).value + uWeight.value - minWeight.value >= overload.value) {
+                                localPQ.get(blockID.value).pop();
+                            }
                         }
+
+                        // Push the current node and its relative gain
+                        localPQ.get(blockID.value).push(nodeID, relGain);
+                        NodeWeight uWeight = pGraph.nodeWeight(nodeID);
+                        localPQWeight.set(blockID.value, new BlockWeight(localPQWeight.get(blockID.value).value + uWeight.value));
                     }
-
-                    // Push the current node and its relative gain
-                    localPQ.push(nodeID, relGain);
-                    NodeWeight uWeight = pGraph.nodeWeight(nodeID);
-                    localPQWeight = new BlockWeight(localPQWeight.value + uWeight.value);
-                }
-
-                // Store the updated PQ and weight for this block
-                if (sharedLocalPQ.get(blockID.value).isEmpty()) {
-                    sharedLocalPQ.get(blockID.value).add(localPQ);
-                    sharedLocalPQWeight.get(blockID.value).add(localPQWeight);
-                } else {
-                    sharedLocalPQWeight.get(blockID.value).set(0, localPQWeight);
                 }
             }
-        }
+
+            // After populating local PQs, add them to the sharedLocalPQ
+            synchronized (sharedLocalPQ) {
+                for (int i = 0; i < localPQ.size(); i++) {
+                    sharedLocalPQ.get(i).add(localPQ.get(i));  // Collect local PQs for each block
+                    sharedLocalPQWeight.get(i).add(localPQWeight.get(i));  // Collect local PQ weights
+                }
+            }
+        });
 
         // Step 4: Clear the global PQ before merging
         pq.clear(); // Ensure the global PQ is empty before merging
 
-        // Step 5: Merge shared local PQs into the global PQ (sequential version)
-        for (int b = 0; b < pGraph.k().value; b++) {
-            BlockID blockID = new BlockID(b);
-            if (blockOverload(blockID).value > 0) {
-                stats.numOverloadedBlocks.incrementAndGet();
-            }
-
-            // Reset the global PQ weight tracker for this block
-            pqWeight.set(b, new BlockWeight(0));
-
-            // Access shared local PQs and weights for the block 'b'
-            List<DynamicBinaryHeap<NodeID, Double>> localPQs = sharedLocalPQ.get(b);
-            List<BlockWeight> localPQWeights = sharedLocalPQWeight.get(b);
-
-            // Merge local PQs into the global PQ
-            for (int i = 0; i < localPQs.size(); i++) {
-                DynamicBinaryHeap<NodeID, Double> pqForBlock = localPQs.get(i);
-                for (DynamicBinaryHeap.HeapElement<NodeID, Double> element : pqForBlock.getElements()) {
-                    NodeID u = element.id;
-                    double relGain = element.key;
-
-                    addToPQ(blockID, u, pGraph.nodeWeight(u), relGain);  // Ensure gains are transferred
+        // Step 5: Merge shared local PQs into the global PQ
+        ParallelFor.parallelFor(0, pGraph.k().value, 1, (start, end) -> {
+            for (int b = start; b < end; b++) {
+                BlockID blockID = new BlockID(b);
+                if (blockOverload(blockID).value > 0) {
+                    stats.numOverloadedBlocks.incrementAndGet();
                 }
 
-                // Accumulate the weights
-                pqWeight.set(b, new BlockWeight(pqWeight.get(b).value + localPQWeights.get(i).value));
-            }
+                // Reset the global PQ weight tracker for this block
+                pqWeight.set(b, new BlockWeight(0));
 
-            if (!pq.empty(b)) {
-                System.out.println("PQ " + b + ": weight=" + pqWeight.get(b).value + ", " +
-                        pq.peekMinKey(b) + " < key < " + pq.peekMaxKey(b));
-            } else {
-                System.out.println("PQ " + b + ": empty");
+                // Access shared local PQs and weights for the block 'b'
+                List<DynamicBinaryHeap<NodeID, Double>> localPQs = sharedLocalPQ.get(b);
+                List<BlockWeight> localPQWeights = sharedLocalPQWeight.get(b);
+
+                // Merge local PQs into the global PQ
+                for (int i = 0; i < localPQs.size(); i++) {
+                    DynamicBinaryHeap<NodeID, Double> pqForBlock = localPQs.get(i);
+                    for (DynamicBinaryHeap.HeapElement<NodeID, Double> element : pqForBlock.getElements()) {
+                        NodeID u = element.id;
+                        double relGain = element.key;
+
+                        addToPQ(blockID, u, pGraph.nodeWeight(u), relGain);  // Ensure gains are transferred
+                    }
+
+                    // Accumulate the weights
+                    pqWeight.set(b, new BlockWeight(pqWeight.get(b).value + localPQWeights.get(i).value));
+                }
+                /*
+                 if (!pq.empty(b)) {
+                    System.out.println("PQ " + b + ": weight=" + pqWeight.get(b).value + ", " +
+                            pq.peekMinKey(b) + " < key < " + pq.peekMaxKey(b));
+                } else {
+                    System.out.println("PQ " + b + ": empty");
+                }
+                 */
+
             }
-        }
+        });
 
         stats.totalPQSizes.set(pq.size());
     }
@@ -442,18 +607,32 @@ public class GreedyBalancer extends Refiner {
         // Ensure the node weight and block ID are correct
         assert uWeight.equals(pGraph.nodeWeight(u)) : "Node weight mismatch for node u";
         assert b.equals(pGraph.block(u)) : "Block ID mismatch for node u";
+        if (pq.contains(u)) {
+            // Node is already in the PQ, so do not add it again
+            /*
+            if (DEBUG) {
+                System.out.println("Node " + u.value + " is already in the PQ for block " + b.value + ". Skipping...");
+            }
+             */
 
+            return false;  // Node was not added because it's already in the PQ
+        }
         // Check if the block's PQ can accommodate the node based on its weight and relative gain
         if (pqWeight.get(b.value).value < blockOverload(b).value || pq.empty(b.value) || relGain > pq.peekMinKey(b.value)) {
             // Debugging information if needed
             if (DEBUG) {
+                /*
                 System.out.println("Add node " + u.value + " to PQ with block " + b.value + ", PQ weight " + pqWeight.get(b.value).value + ", rel gain " + relGain);
+                 */
+
             }
             pq.checkInconsistencies();
             pq.checkIdPosReferences();
+            pq.checkDuplicateNodeIDs();
             // Push the node 'u' into the priority queue for block 'b' with the computed gain
             pq.push(b.value, u, relGain);
             pq.checkIdPosReferences();
+            pq.checkDuplicateNodeIDs();
             pq.checkInconsistencies();
             pqWeight.set(b.value, new BlockWeight(pqWeight.get(b.value).value + uWeight.value));
 
@@ -467,8 +646,10 @@ public class GreedyBalancer extends Refiner {
                 if (pqWeight.get(b.value).value - minWeight.value >= blockOverload(b).value) {
                     pq.checkInconsistencies();
                     pq.checkIdPosReferences();
+                    pq.checkDuplicateNodeIDs();
                     pq.popMin(b.value);
                     pq.checkIdPosReferences();
+                    pq.checkDuplicateNodeIDs();
                     pq.checkInconsistencies();
                     pqWeight.set(b.value, new BlockWeight(pqWeight.get(b.value).value - minWeight.value));
                 }

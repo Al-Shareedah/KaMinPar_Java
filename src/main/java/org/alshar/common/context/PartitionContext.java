@@ -4,8 +4,7 @@ import org.alshar.Graph;
 import org.alshar.common.datastructures.*;
 import org.alshar.kaminpar_shm.kaminpar;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.Queue;
 
 public class PartitionContext {
@@ -19,11 +18,10 @@ public class PartitionContext {
 
     public BlockWeightsContext blockWeights = new BlockWeightsContext();
     // Queue for user-defined block weight constraints
-    public Queue<BlockWeight> blockConstraints = new LinkedList<>();
+    public Map<BlockWeight, Boolean> blockConstraints = new LinkedHashMap<>();
+    public List<List<BlockWeight>> combinedBlockWeights = new ArrayList<>();
 
-    // New variables to store bipartition block weights
-    public BlockWeight bipartition_blockWeights[] = new BlockWeight[2];
-    public BlockWeight bipartition_MaxblockWeights[] = new BlockWeight[2];
+
 
 
     void setupBlockWeights() {
@@ -41,7 +39,8 @@ public class PartitionContext {
         this.totalEdgeWeight = new EdgeWeight(other.totalEdgeWeight.value);
         this.maxNodeWeight = new NodeWeight(other.maxNodeWeight.value);
         this.blockWeights = new BlockWeightsContext(other.blockWeights);
-        this.blockConstraints = new LinkedList<>(other.blockConstraints);
+        this.blockConstraints = new LinkedHashMap<>(other.blockConstraints);
+        this.combinedBlockWeights = new ArrayList<>(other.combinedBlockWeights);
     }
 
     public void setup(Graph graph) {
@@ -56,6 +55,10 @@ public class PartitionContext {
     public PartitionContext getPartition() {
         return this;
     }
-
+    public void resetBlockWeightFlags() {
+        for (Map.Entry<BlockWeight, Boolean> entry : blockConstraints.entrySet()) {
+            entry.setValue(false);  // Reset each flag to false
+        }
+    }
 
 }

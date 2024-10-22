@@ -7,6 +7,9 @@ import org.alshar.common.datastructures.BlockID;
 import org.alshar.common.datastructures.NodeID;
 import org.alshar.common.datastructures.NodeWeight;
 
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+
 public class PartitionUtils {
 
     public static int computeFinalK(int block, int currentK, int inputK) {
@@ -44,27 +47,23 @@ public class PartitionUtils {
             Graph subgraph, BlockID k1, BlockID k2, PartitionContext kwayPCtx) {
         PartitionContext twowayPCtx = new PartitionContext();
         twowayPCtx.k = new BlockID(2);
+        twowayPCtx.blockConstraints = new LinkedHashMap<>(kwayPCtx.blockConstraints);
         twowayPCtx.setup(subgraph);
         twowayPCtx.epsilon = compute2WayAdaptiveEpsilon(subgraph.totalNodeWeight().value, k1.value + k2.value, kwayPCtx);
-        twowayPCtx.blockWeights.setup(twowayPCtx, k1.value + k2.value);
+        twowayPCtx.resetBlockWeightFlags();
+        twowayPCtx.combinedBlockWeights = kwayPCtx.combinedBlockWeights;
+        twowayPCtx.blockWeights.setup(twowayPCtx, k1.value + k2.value, twowayPCtx.blockConstraints);
         return twowayPCtx;
     }
-    public static PartitionContext createBipartitionContextWithQueue(
+    public static PartitionContext createInitialBipartitionContext(
             Graph subgraph, BlockID k1, BlockID k2, PartitionContext kwayPCtx) {
         PartitionContext twowayPCtx = new PartitionContext();
         twowayPCtx.k = new BlockID(2);
+        twowayPCtx.blockConstraints = new LinkedHashMap<>(kwayPCtx.blockConstraints);
         twowayPCtx.setup(subgraph);
-
-        // Compute the epsilon value based on the weights
         twowayPCtx.epsilon = compute2WayAdaptiveEpsilon(subgraph.totalNodeWeight().value, k1.value + k2.value, kwayPCtx);
-
-        // Access the blockConstraints queue from kwayPCtx and pass it to setup
-        if (kwayPCtx.blockConstraints != null && !kwayPCtx.blockConstraints.isEmpty()) {
-            twowayPCtx.blockWeights.setup(twowayPCtx, k1.value + k2.value, kwayPCtx.blockConstraints);
-        } else {
-            throw new IllegalStateException("Block constraints queue is empty or not initialized.");
-        }
-
+        twowayPCtx.resetBlockWeightFlags();
+        twowayPCtx.blockWeights.twoWaySetup(twowayPCtx, k1.value + k2.value, twowayPCtx.blockConstraints);
         return twowayPCtx;
     }
 

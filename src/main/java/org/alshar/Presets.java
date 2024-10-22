@@ -56,16 +56,15 @@ public class Presets {
 
         // Set Partition Context
         ctx.partition = new PartitionContext();
-        ctx.partition.epsilon = 0.03;
+        ctx.partition.epsilon = 0.0;
         ctx.partition.k = new BlockID(Integer.MAX_VALUE); // kInvalidBlockID equivalent
 
         // Set block constraints
-        ctx.partition.blockConstraints.add(new BlockWeight(300));
-        ctx.partition.blockConstraints.add(new BlockWeight(250));
-        ctx.partition.blockConstraints.add(new BlockWeight(200));
-        ctx.partition.blockConstraints.add(new BlockWeight(150));
-        ctx.partition.blockConstraints.add(new BlockWeight(133));
-        ctx.partition.blockConstraints.add(new BlockWeight(100));
+        ctx.partition.blockConstraints.put(new BlockWeight(183), false);
+        ctx.partition.blockConstraints.put(new BlockWeight(238), false);
+        ctx.partition.blockConstraints.put(new BlockWeight(309), false);
+        ctx.partition.blockConstraints.put(new BlockWeight(403), false);
+
 
         // Set Coarsening Context
         ctx.coarsening = new CoarseningContext();

@@ -149,19 +149,9 @@ public class DeepMultilevelPartitioner extends Partitioner {
         if (currentPCtx.k.equals(inputCtx.partition.k)) {
             currentPCtx.blockWeights = new BlockWeightsContext(inputCtx.partition.blockWeights);
         }
-        // When currentPCtx.k == 2, set the blockWeights to bipartition_blockWeights and maxBlockWeights to bipartition_MaxblockWeights
-        if (currentPCtx.k.value == 2) {
-            currentPCtx.blockWeights.perfectlyBalancedBlockWeights = Arrays.asList(
-                    inputCtx.partition.bipartition_blockWeights[0],
-                    inputCtx.partition.bipartition_blockWeights[1]
-            );
-            currentPCtx.blockWeights.maxBlockWeights = Arrays.asList(
-                    inputCtx.partition.bipartition_MaxblockWeights[0],
-                    inputCtx.partition.bipartition_MaxblockWeights[1]
-            );
 
 
-        }
+
 
         Helper.refine(refiner, pGraph, currentPCtx);
 
@@ -176,6 +166,10 @@ public class DeepMultilevelPartitioner extends Partitioner {
 
     private PartitionedGraph extendPartition(PartitionedGraph pGraph, BlockID kPrime) {
         Logger.log("  Extending partition from " + pGraph.k().value + " blocks to " + kPrime.value + " blocks");
+
+        // Reset the block weights tracker
+        currentPCtx.resetBlockWeightFlags();
+
         // Initialize an array to store the new block sizes (weights)
         int[] newBlockSizes = new int[pGraph.k().value];
 
@@ -242,7 +236,7 @@ public class DeepMultilevelPartitioner extends Partitioner {
         return cGraph;
     }
     private void calculateCCM(List<Integer> actualSizes, int totalNodes) {
-        List<Integer> desiredSizes = Arrays.asList(11014, 3304, 991, 297);
+        List<Integer> desiredSizes = Arrays.asList(183, 238, 309, 403);
         int totalDifference = 0;
         int partitionsNotMeetingSize = 0;
         double totalPercentageOff = 0.0;
@@ -278,10 +272,13 @@ public class DeepMultilevelPartitioner extends Partitioner {
         List<Integer> actualSizes = new ArrayList<>();
         int totalComponents = 0;  // To accumulate total number of connected components
 
-        // Iterate through each block and calculate its connected components
-        for (Map.Entry<BlockID, Set<NodeID>> entry : blockNodes.entrySet()) {
-            BlockID blockId = entry.getKey();
-            Set<NodeID> nodes = entry.getValue();
+        // Create a sorted list of BlockIDs to ensure sequential processing
+        List<BlockID> sortedBlockIDs = new ArrayList<>(blockNodes.keySet());
+        sortedBlockIDs.sort(Comparator.comparingInt(blockID -> blockID.value));  // Sort by BlockID value
+
+        // Iterate through each block (in sequential order) and calculate its connected components
+        for (BlockID blockId : sortedBlockIDs) {
+            Set<NodeID> nodes = blockNodes.get(blockId);
 
             Map<NodeID, Boolean> visitedNodes = new HashMap<>();
             for (NodeID node : nodes) {
@@ -339,6 +336,7 @@ public class DeepMultilevelPartitioner extends Partitioner {
 
 
 
+
     private NodeID initialPartitioningThreshold() {
         if (helperParallelIpMode(inputCtx.partitioning.deepInitialPartitioningMode)) {
             return new NodeID(inputCtx.parallel.numThreads * inputCtx.coarsening.contractionLimit);
@@ -358,7 +356,7 @@ public class DeepMultilevelPartitioner extends Partitioner {
             // Since timers are not multi-threaded, disable them during parallel initial partitioning.
 
             Timer_km.global().disable();
-
+            inputCtx.partition.resetBlockWeightFlags();
             PartitionedGraph pGraph;
             switch (inputCtx.partitioning.deepInitialPartitioningMode) {
                 case SEQUENTIAL:
@@ -380,8 +378,9 @@ public class DeepMultilevelPartitioner extends Partitioner {
             }
             // Re-enable the timers after the partitioning is done.
             Timer_km.global().enable();
-
+            currentPCtx.resetBlockWeightFlags();
             Helper.updatePartitionContext(currentPCtx, pGraph, new BlockID(inputCtx.partition.k.value));
+            currentPCtx.combinedBlockWeights = inputCtx.partition.combinedBlockWeights;
             // Log the metrics for the initial partition
             Logger.log("  Number of blocks: " + pGraph.k().value);
             Logger.log("  Cut:              " + Metrics.edgeCut(pGraph).value);
