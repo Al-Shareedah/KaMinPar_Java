@@ -187,7 +187,7 @@ public class DeepMultilevelPartitioner extends Partitioner {
         return cGraph;
     }
     private void calculateCCM(List<Integer> actualSizes, int totalNodes) {
-        List<Integer> desiredSizes = Arrays.asList(11014, 3304, 991, 297);
+        List<Integer> desiredSizes = Arrays.asList(2522,3279,4262,5543);
         int totalDifference = 0;
         int partitionsNotMeetingSize = 0;
         double totalPercentageOff = 0.0;
