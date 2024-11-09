@@ -13,136 +13,12 @@ public class DynamicBinaryMinMaxForest<ID, Key extends Comparable<Key>> {
         this.maxForest = new DynamicBinaryMaxForest<>(capacity, heaps);
         this.minForest = new DynamicBinaryMinForest<>(capacity, heaps);
     }
-    public void checkIdPosReferences() {
-        // Iterate over all the heaps in both maxForest and minForest
-        int heapCount = Math.min(maxForest.heapsCount(), minForest.heapsCount());  // Ensure we're checking only valid heaps
-
-        for (int heap = 0; heap < heapCount; heap++) {
-            // Get the elements in both maxForest and minForest for the current heap
-            List<HeapElement<ID, Key>> maxElements = maxForest.elements(heap);
-            List<HeapElement<ID, Key>> minElements = minForest.elements(heap);
-
-            for (int pos = 0; pos < maxElements.size(); pos++) {
-                ID id = maxElements.get(pos).id;
-                Integer recordedPos = maxForest.idPos.get(id);
-
-                if (recordedPos == null || recordedPos != pos) {
-                    System.out.println("Inconsistency in maxForest for ID " + id + ":");
-                    System.out.println("  Expected position: " + pos + ", Recorded position: " + recordedPos);
-                }
-            }
-
-            // Check for minForest
-            for (int pos = 0; pos < minElements.size(); pos++) {
-                ID id = minElements.get(pos).id;
-                Integer recordedPos = minForest.idPos.get(id);
-
-                if (recordedPos == null || recordedPos != pos) {
-                    System.out.println("Inconsistency in minForest for ID " + id + ":");
-                    System.out.println("  Expected position: " + pos + ", Recorded position: " + recordedPos);
-                }
-            }
-        }
-    }
 
 
-    public void checkDuplicateNodeIDs() {
-        // Iterate over all heaps in both maxForest and minForest
-        int heapCount = Math.min(maxForest.heapsCount(), minForest.heapsCount());  // Ensure we're checking only valid heaps
-
-        for (int heap = 0; heap < heapCount; heap++) {
-            // Get the elements in maxForest for the current heap
-            List<HeapElement<ID, Key>> maxElements = maxForest.elements(heap);
-            Map<ID, Integer> maxForestIDCounts = new HashMap<>();  // Store counts of each ID in maxForest
-
-            // Check for multiple occurrences of the same NodeID in maxForest
-            for (HeapElement<ID, Key> element : maxElements) {
-                ID id = element.id;
-                maxForestIDCounts.put(id, maxForestIDCounts.getOrDefault(id, 0) + 1);
-            }
-
-            // Print duplicate NodeIDs found in maxForest for the current heap
-            for (Map.Entry<ID, Integer> entry : maxForestIDCounts.entrySet()) {
-                if (entry.getValue() > 1) {
-                    System.out.println("Multiple elements with NodeID " + entry.getKey() + " found in maxForest heap " + heap);
-                }
-            }
-        }
-
-        for (int heap = 0; heap < heapCount; heap++) {
-            // Get the elements in minForest for the current heap
-            List<HeapElement<ID, Key>> minElements = minForest.elements(heap);
-            Map<ID, Integer> minForestIDCounts = new HashMap<>();  // Store counts of each ID in minForest
-
-            // Check for multiple occurrences of the same NodeID in minForest
-            for (HeapElement<ID, Key> element : minElements) {
-                ID id = element.id;
-                minForestIDCounts.put(id, minForestIDCounts.getOrDefault(id, 0) + 1);
-            }
-
-            // Print duplicate NodeIDs found in minForest for the current heap
-            for (Map.Entry<ID, Integer> entry : minForestIDCounts.entrySet()) {
-                if (entry.getValue() > 1) {
-                    System.out.println("Multiple elements with NodeID " + entry.getKey() + " found in minForest heap " + heap);
-                }
-            }
-        }
-    }
 
 
-    public void checkInconsistencies() {
-        // Get the actual number of heaps from the size of the heaps list
-        int heapCount = Math.min(maxForest.heapsCount(), minForest.heapsCount());  // Safeguard if maxForest and minForest sizes differ
 
-        for (int heap = 0; heap < heapCount; heap++) {
-            // Get the elements for the current heap in maxForest and minForest
-            List<HeapElement<ID, Key>> maxElements = maxForest.elements(heap);
-            List<HeapElement<ID, Key>> minElements = minForest.elements(heap);
 
-            // Create sets for IDs in each forest for easy comparison
-            Set<ID> maxForestIDs = new HashSet<>();
-            Set<ID> minForestIDs = new HashSet<>();
-
-            for (HeapElement<ID, Key> element : maxElements) {
-                maxForestIDs.add(element.id);
-            }
-
-            for (HeapElement<ID, Key> element : minElements) {
-                minForestIDs.add(element.id);
-            }
-
-            // Compare the two sets to find missing IDs in either forest
-            Set<ID> missingInMax = new HashSet<>(minForestIDs);
-            missingInMax.removeAll(maxForestIDs);  // IDs in minForest but not in maxForest
-
-            Set<ID> missingInMin = new HashSet<>(maxForestIDs);
-            missingInMin.removeAll(minForestIDs);  // IDs in maxForest but not in minForest
-
-            if (!missingInMax.isEmpty() || !missingInMin.isEmpty()) {
-                System.out.println("Inconsistencies found in heap " + heap + ":");
-                if (!missingInMax.isEmpty()) {
-                    System.out.println("  Missing in maxForest: " + missingInMax);
-                }
-                if (!missingInMin.isEmpty()) {
-                    System.out.println("  Missing in minForest: " + missingInMin);
-                }
-            }
-
-            // Now check if the keys for matching IDs are consistent between the two forests
-            for (ID id : maxForestIDs) {
-                if (minForestIDs.contains(id)) {
-                    Key maxKey = maxForest.key(heap, id);
-                    Key minKey = minForest.key(heap, id);
-
-                    if (!maxKey.equals(minKey)) {
-                        System.out.println("Inconsistent key for ID " + id + " in heap " + heap + ":");
-                        System.out.println("  maxForest key: " + maxKey);
-                        System.out.println("  minForest key: " + minKey);
-                    }
-                }
-            }
-        }
-    }
 
 
 
@@ -160,7 +36,6 @@ public class DynamicBinaryMinMaxForest<ID, Key extends Comparable<Key>> {
 
     public void push(int heap, NodeID id, Key key) {
         maxForest.push(heap, (ID) id, key);
-        this.checkIdPosReferences();
         minForest.push(heap, (ID) id, key);
     }
 
