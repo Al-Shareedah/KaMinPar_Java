@@ -94,8 +94,8 @@ public abstract class Bipartitioner {
     protected abstract void bipartitionImpl();
 
     protected void addToSmallerBlock(NodeID u) {
-        NodeWeight delta1 = blockWeights.get(0).subtract(pCtx.blockWeights.perfectlyBalanced(0));
-        NodeWeight delta2 = blockWeights.get(1).subtract(pCtx.blockWeights.perfectlyBalanced(1));
+        NodeWeight delta1 = blockWeights.get(0).subtract(pCtx.blockWeights.maxBlockWeights(0));
+        NodeWeight delta2 = blockWeights.get(1).subtract(pCtx.blockWeights.maxBlockWeights(1));
         BlockID block = delta1.compareTo(delta2) < 0 ? V1 : V2;
         setBlock(u, block);
     }

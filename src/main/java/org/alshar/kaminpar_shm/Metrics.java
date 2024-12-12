@@ -61,6 +61,33 @@ public class Metrics {
         return maxImbalance;
     }
 
+    public static NodeWeight totalUnderload(PartitionedGraph pGraph, PartitionContext pCtx) {
+        long totalUnderload = 0;
+
+        for (int b = 0; b < pGraph.k().value; b++) {
+            // Create a BlockID object for the current block
+            BlockID currentBlockID = new BlockID(b);
+
+            // Get the weight of the current block from the graph
+            long blockWeight = pGraph.blockWeight(currentBlockID).value;
+
+            // Get the perfectly balanced block weight for the current block
+            long perfectlyBalancedWeight = pCtx.blockWeights.perfectlyBalanced(b).value;
+
+            // Calculate the minimum allowed block weight (perfectly balanced - absoluteEpsilon)
+            long minBlockWeight = perfectlyBalancedWeight - pCtx.absoluteEpsilon;
+
+            // Calculate the underload for this block (if any)
+            long underload = Math.max(0, minBlockWeight - blockWeight);
+
+            // Accumulate the total underload
+            totalUnderload += underload;
+        }
+
+        return new NodeWeight(totalUnderload);
+    }
+
+
     public static NodeWeight totalOverload(PartitionedGraph pGraph, PartitionContext pCtx) {
         long totalOverload = 0;
         for (int b = 0; b < pGraph.k().value; b++) {

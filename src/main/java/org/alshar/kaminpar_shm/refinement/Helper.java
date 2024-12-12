@@ -37,7 +37,9 @@ public class Helper {
         for (int i = 0; i < pGraph.blockWeights.size(); i++) {
             BlockWeight blockWeight = pGraph.blockWeights.get(i);
             currentPCtx.blockWeights.perfectlyBalancedBlockWeights.add(new BlockWeight(blockWeight.value));
-            long maxBlockWeight = (long) ((1.0 + currentPCtx.epsilon) * blockWeight.value);
+
+            // Calculate maxBlockWeight by adding absoluteEpsilon
+            long maxBlockWeight = blockWeight.value + currentPCtx.absoluteEpsilon;
             currentPCtx.blockWeights.maxBlockWeights.add(new BlockWeight(maxBlockWeight));
         }
     }
@@ -83,7 +85,7 @@ public class Helper {
 
         // Call the modified InitialPartitioner constructor
         InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx, finalK, ipMCtxPool.local().get());
-        PartitionedGraph pGraph = partitioner.partition();
+        PartitionedGraph pGraph = partitioner.partitionRecursive();
         ipMCtxPool.local().put(partitioner.free());
 
         return pGraph;

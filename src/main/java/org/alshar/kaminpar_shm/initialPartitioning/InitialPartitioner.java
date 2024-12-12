@@ -3,6 +3,7 @@ package org.alshar.kaminpar_shm.initialPartitioning;
 import org.alshar.Context;
 import org.alshar.Graph;
 import org.alshar.common.datastructures.BlockID;
+import org.alshar.common.datastructures.BlockWeight;
 import org.alshar.common.datastructures.NodeWeight;
 import org.alshar.kaminpar_shm.initialPartitioning.InitialCoarsener.MemoryContext;
 import org.alshar.common.Math.MathUtils;
@@ -11,6 +12,10 @@ import org.alshar.kaminpar_shm.Metrics;
 import org.alshar.kaminpar_shm.PartitionUtils;
 import org.alshar.kaminpar_shm.PartitionedGraph;
 import org.alshar.common.Logger;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class InitialPartitioner {
     // Separate MemoryContext structure
     public static class MemoryContext {
@@ -85,7 +90,52 @@ public class InitialPartitioner {
 
         return uncoarsen(pGraph);
     }
+    public PartitionedGraph partitionRecursive() {
+        Graph cGraph = coarsen();
+        // Configure p_ctx with the closest matching block weights
+        configurePartitionContext(cGraph);
+        //Logger.log("Calling bipartitioner on coarsest graph with n=" + cGraph.n().value + " m=" + cGraph.m().value);
+        PoolBipartitionerFactory factory = new PoolBipartitionerFactory();
+        PoolBipartitioner bipartitioner = factory.create(cGraph, p_ctx, i_ctx, m_ctx.poolMCtx);
+        bipartitioner.setNumRepetitions(numBipartitionRepetitions);
+        PartitionedGraph pGraph = bipartitioner.bipartition();
+        m_ctx.poolMCtx = bipartitioner.free();
 
+        //Logger.log("Bipartitioner result: cut=" + Metrics.edgeCutSeq(pGraph).value + " imbalance=" + Metrics.imbalance(pGraph) + " feasible=" + Metrics.isFeasible(pGraph, p_ctx));
+
+        return uncoarsen(pGraph);
+    }
+
+    private void configurePartitionContext(Graph cGraph) {
+        BlockWeight totalNodeWeight = new BlockWeight(cGraph.totalNodeWeight().value);
+        List<List<BlockWeight>> combinedBlockWeights = p_ctx.combinedBlockWeights;
+
+        List<BlockWeight> bestMatch = null;
+        long closestDifference = Long.MAX_VALUE;
+
+        // Find the combination with the total closest to totalNodeWeight
+        for (List<BlockWeight> blockWeights : combinedBlockWeights) {
+            long total = blockWeights.stream().mapToLong(BlockWeight::getValue).sum();
+            long difference = Math.abs(totalNodeWeight.value - total);
+            if (difference < closestDifference) {
+                closestDifference = difference;
+                bestMatch = blockWeights;
+            }
+        }
+
+        // Ensure a match is found
+        if (bestMatch == null) {
+            throw new IllegalStateException("No suitable block weight combination found for the given totalNodeWeight.");
+        }
+
+        // Set the perfectly balanced and max block weights
+        p_ctx.blockWeights.perfectlyBalancedBlockWeights = new ArrayList<>(bestMatch);
+        p_ctx.blockWeights.maxBlockWeights = new ArrayList<>();
+        for (BlockWeight weight : bestMatch) {
+            BlockWeight maxWeight = new BlockWeight(weight.value + p_ctx.absoluteEpsilon);
+            p_ctx.blockWeights.maxBlockWeights.add(maxWeight);
+        }
+    }
     private Graph coarsen() {
         CoarseningContext cCtx = new CoarseningContext();
         cCtx.contractionLimit = i_ctx.coarsening.contractionLimit;

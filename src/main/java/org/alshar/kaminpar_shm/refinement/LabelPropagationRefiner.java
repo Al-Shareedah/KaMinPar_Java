@@ -6,6 +6,7 @@ import org.alshar.common.Math.Random_shm;
 import org.alshar.common.ParallelUtils.ParallelFor;
 import org.alshar.common.context.*;
 import org.alshar.common.datastructures.*;
+import org.alshar.kaminpar_shm.Metrics;
 import org.alshar.kaminpar_shm.PartitionedGraph;
 import org.alshar.kaminpar_shm.coarsening.LPClustering;
 import org.alshar.kaminpar_shm.coarsening.LabelPropagationConfig;
@@ -120,6 +121,18 @@ public class LabelPropagationRefiner extends Refiner {
             this.pCtx = pCtx;
             assert this.graph == pGraph.getGraph();
             assert pGraph.k().value <= pCtx.k.value;
+
+            // Calculate the initial overload
+            NodeWeight initialOverload = Metrics.totalOverload(pGraph, pCtx);
+
+            // Calculate the initial underload
+            NodeWeight initialUnderload = Metrics.totalUnderload(pGraph, pCtx);
+
+            // Check if refinement is necessary
+            if (initialOverload.value == 0 && initialUnderload.value == 0) {
+                System.out.println("No overload or underload detected. Exiting refinement.");
+                return false; // Exit early if there is no need for refinement
+            }
 
             initialize(graph, new NodeID(pCtx.k.value));
 

@@ -71,7 +71,7 @@ public class GreedyGraphGrowingBipartitioner extends Bipartitioner {
                 if (queue.peekKey().equals(computeNegativeGain(u))) {
                     queue.pop();
                     changeBlock(u, V2);
-                    if (blockWeights.get(V2.value).compareTo(pCtx.blockWeights.perfectlyBalanced(V2.value)) >= 0) {
+                    if (blockWeights.get(V2.value).compareTo(pCtx.blockWeights.maxBlockWeights(V2.value)) >= 0) {
                         break;
                     }
 
@@ -88,7 +88,7 @@ public class GreedyGraphGrowingBipartitioner extends Bipartitioner {
                     }
                 }
             }
-        } while (blockWeights.get(V2.value).compareTo(pCtx.blockWeights.perfectlyBalanced(V2.value)) < 0);
+        } while (blockWeights.get(V2.value).compareTo(pCtx.blockWeights.maxBlockWeights(V2.value)) < 0);
 
 
         marker.reset();

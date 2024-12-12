@@ -247,4 +247,7 @@ public class PartitionedGraph extends GraphDelegate {
         return true;
     }
 
+    public StaticArray<BlockID> getPartition() {
+        return partition;
+    }
 }

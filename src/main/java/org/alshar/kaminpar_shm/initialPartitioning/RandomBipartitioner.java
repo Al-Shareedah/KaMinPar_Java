@@ -26,7 +26,7 @@ public class RandomBipartitioner extends Bipartitioner {
     protected void bipartitionImpl() {
         for (NodeID u : graph.nodes()) {
             int block = rand.randomIndex(0, 2);
-            if (blockWeights.get(block).add(graph.nodeWeight(u)).compareTo(pCtx.blockWeights.perfectlyBalanced(block)) < 0) {
+            if (blockWeights.get(block).add(graph.nodeWeight(u)).compareTo(pCtx.blockWeights.maxBlockWeights(block)) < 0) {
                 setBlock(u, new BlockID(block));
             } else {
                 addToSmallerBlock(u);

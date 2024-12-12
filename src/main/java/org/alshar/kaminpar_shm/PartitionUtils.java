@@ -50,6 +50,7 @@ public class PartitionUtils {
         twowayPCtx.blockConstraints = new LinkedHashMap<>(kwayPCtx.blockConstraints);
         twowayPCtx.setup(subgraph);
         twowayPCtx.epsilon = compute2WayAdaptiveEpsilon(subgraph.totalNodeWeight().value, k1.value + k2.value, kwayPCtx);
+        twowayPCtx.absoluteEpsilon = kwayPCtx.absoluteEpsilon;
         twowayPCtx.resetBlockWeightFlags();
         twowayPCtx.combinedBlockWeights = kwayPCtx.combinedBlockWeights;
         twowayPCtx.blockWeights.setup(twowayPCtx, k1.value + k2.value, twowayPCtx.blockConstraints);
@@ -62,6 +63,7 @@ public class PartitionUtils {
         twowayPCtx.blockConstraints = new LinkedHashMap<>(kwayPCtx.blockConstraints);
         twowayPCtx.setup(subgraph);
         twowayPCtx.epsilon = compute2WayAdaptiveEpsilon(subgraph.totalNodeWeight().value, k1.value + k2.value, kwayPCtx);
+        twowayPCtx.absoluteEpsilon = kwayPCtx.absoluteEpsilon;
         twowayPCtx.resetBlockWeightFlags();
         twowayPCtx.blockWeights.twoWaySetup(twowayPCtx, k1.value + k2.value, twowayPCtx.blockConstraints);
         return twowayPCtx;

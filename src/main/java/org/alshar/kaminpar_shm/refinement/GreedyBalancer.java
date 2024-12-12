@@ -120,9 +120,19 @@ public class GreedyBalancer extends Refiner {
 
         // Calculate the initial overload
         NodeWeight initialOverload = Metrics.totalOverload(pGraph, pCtx);
-        if (initialOverload.value == 0) {
-            return true; // No overload means no refinement needed
+
+        // Calculate the initial underload
+        NodeWeight initialUnderload = Metrics.totalUnderload(pGraph, pCtx);
+
+
+        if (initialOverload.value == 0 ) {
+            if(initialUnderload.value == 0){
+                return true; // No overload and no underload mean no refinement needed
+            }
+            forcefullyResolveUnderload(pGraph, pCtx);
+            return true;
         }
+
 
         // Calculate the initial edge cut (only for debugging)
         EdgeWeight initialCut = DEBUG ? Metrics.edgeCut(pGraph) : null;
@@ -295,6 +305,24 @@ public class GreedyBalancer extends Refiner {
                     hasOverload = true; // Set the flag to true to indicate there is still overload
                     List<BlockID> targetBlocks = findUnderloadedBlocks(pGraph, pCtx, fromBlock);
 
+                    // If there are no underloaded blocks, look for blocks that can accept nodes while maintaining valid weights
+                    if (targetBlocks.isEmpty()) {
+                        targetBlocks = new ArrayList<>();
+
+                        for (BlockID blockID : pGraph.blocks()) {
+                            if (!blockID.equals(fromBlock)) {
+                                long blockWeight = pGraph.blockWeight(blockID).value;
+                                long minBlockWeight = pCtx.blockWeights.perfectlyBalanced(blockID.value).value - pCtx.absoluteEpsilon;
+                                long maxBlockWeight = pCtx.blockWeights.perfectlyBalanced(blockID.value).value + pCtx.absoluteEpsilon;
+
+                                // Check if the block weight is within the valid range
+                                if (blockWeight >= minBlockWeight && blockWeight <= maxBlockWeight) {
+                                    targetBlocks.add(blockID);
+                                }
+                            }
+                        }
+                    }
+
                     // If there are no underloaded blocks, skip this block
                     if (targetBlocks.isEmpty()) {
                         continue; // No targets to move to
@@ -306,7 +334,7 @@ public class GreedyBalancer extends Refiner {
                         // Forcefully move the node to the best possible underloaded block
                         boolean moved = false;
                         for (BlockID toBlock : targetBlocks) {
-                            if (isUnderloaded(pGraph, pCtx, toBlock) && moveNodeForcefully(u, fromBlock)) {
+                            if (CanAcceptNodes(pGraph, pCtx, toBlock) && moveNodeForcefully(u, fromBlock)) {
                                 NodeWeight uWeight = pGraph.nodeWeight(u);
                                 BlockWeight delta = new BlockWeight(Math.min(currentOverload.value, uWeight.value));
                                 currentOverload = new BlockWeight(currentOverload.value - delta.value);
@@ -325,6 +353,94 @@ public class GreedyBalancer extends Refiner {
         }
     }
 
+    private void forcefullyResolveUnderload(PartitionedGraph pGraph, PartitionContext pCtx) {
+        boolean hasUnderload = true;
+
+        // Continue iterating over the blocks until all underloaded blocks are resolved
+        while (hasUnderload) {
+            hasUnderload = false;
+
+            // Sequentially iterate over each block
+            for (int toBlockID = 0; toBlockID < pGraph.k().value; toBlockID++) {
+                BlockID toBlock = new BlockID(toBlockID);
+                long blockWeight = pGraph.blockWeight(toBlock).value;
+                long minBlockWeight = pCtx.blockWeights.perfectlyBalanced(toBlockID).value - pCtx.absoluteEpsilon;
+
+                // Skip blocks that are not underloaded
+                if (blockWeight >= minBlockWeight) {
+                    continue;
+                }
+
+                hasUnderload = true; // At least one block is underloaded
+
+                // Find blocks to take nodes from
+                List<BlockID> sourceBlocks = new ArrayList<>();
+                for (BlockID fromBlock : pGraph.blocks()) {
+                    if (!fromBlock.equals(toBlock)) {
+                        long fromBlockWeight = pGraph.blockWeight(fromBlock).value;
+                        long maxBlockWeight = pCtx.blockWeights.perfectlyBalanced(fromBlock.value).value + pCtx.absoluteEpsilon;
+
+                        // Ensure the source block is neither underloaded nor overloaded after transfer
+                        if (fromBlockWeight > minBlockWeight && fromBlockWeight <= maxBlockWeight) {
+                            sourceBlocks.add(fromBlock);
+                        }
+                    }
+                }
+
+                // If no source blocks can provide nodes, skip this underloaded block
+                if (sourceBlocks.isEmpty()) {
+                    continue;
+                }
+
+                // Attempt to resolve underload by taking nodes from source blocks
+                while (blockWeight < minBlockWeight && !sourceBlocks.isEmpty()) {
+                    boolean moved = false;
+
+                    for (BlockID fromBlock : sourceBlocks) {
+                        NodeID u = selectNodeToMove(pGraph, fromBlock);
+
+                        // Ensure moving the node will not overload or underload the source block
+                        long fromBlockWeight = pGraph.blockWeight(fromBlock).value;
+                        long maxFromBlockWeight = pCtx.blockWeights.perfectlyBalanced(fromBlock.value).value + pCtx.absoluteEpsilon;
+                        long minFromBlockWeight = pCtx.blockWeights.perfectlyBalanced(fromBlock.value).value - pCtx.absoluteEpsilon;
+
+                        NodeWeight uWeight = pGraph.nodeWeight(u);
+                        if (fromBlockWeight - uWeight.value >= minFromBlockWeight &&
+                                fromBlockWeight - uWeight.value <= maxFromBlockWeight) {
+
+                            // Move the node forcefully
+                            if (moveNodeForcefully2(u, fromBlock, toBlock)) {
+                                blockWeight += uWeight.value;
+                                moved = true;
+                                break; // Stop once a node is successfully moved
+                            }
+                        }
+                    }
+
+                    // If no node could be moved, remove the source block from consideration
+                    if (!moved) {
+                        sourceBlocks.removeIf(block -> {
+                            long currentBlockWeight = pGraph.blockWeight(block).value; // Unique variable name
+                            long minAllowedWeight = pCtx.blockWeights.perfectlyBalanced(block.value).value - pCtx.absoluteEpsilon;
+                            long maxAllowedWeight = pCtx.blockWeights.perfectlyBalanced(block.value).value + pCtx.absoluteEpsilon;
+
+                            return currentBlockWeight <= minAllowedWeight || currentBlockWeight > maxAllowedWeight;
+                        });
+                    }
+
+                }
+            }
+        }
+    }
+
+
+    private boolean moveNodeForcefully2(NodeID u, BlockID fromBlock, BlockID toBlock) {
+        BlockWeight maxToWeight = pCtx.blockWeights.max(toBlock.value);
+
+        // Attempt to move the node from `fromBlock` to `toBlock`
+        return pGraph.move(u, fromBlock, toBlock, maxToWeight);
+    }
+
 
     private BlockWeight blockOverload2(BlockID blockID) {
         long blockWeight = pGraph.blockWeight(blockID).value;
@@ -338,9 +454,11 @@ public class GreedyBalancer extends Refiner {
         for (BlockID blockID : pGraph.blocks()) {
             if (!blockID.equals(fromBlock)) {
                 long blockWeight = pGraph.blockWeight(blockID).value;
-                long maxBlockWeight = pCtx.blockWeights.max(blockID.value).value;
-                if (blockWeight < maxBlockWeight) {
-                    underloadedBlocks.add(blockID); // This block can accept more nodes
+                long minBlockWeight = pCtx.blockWeights.perfectlyBalanced(blockID.value).value - pCtx.absoluteEpsilon;
+
+                // Check if the block weight is below the minimum allowed weight
+                if (blockWeight < minBlockWeight) {
+                    underloadedBlocks.add(blockID); // This block is underloaded and needs more nodes
                 }
             }
         }
@@ -406,7 +524,7 @@ public class GreedyBalancer extends Refiner {
 
         // Try moving the node to any feasible block, even if it results in a higher edge cut
         for (BlockID toBlock : targetBlocks) {
-            if (isUnderloaded(pGraph, pCtx, toBlock)) {
+            if (CanAcceptNodes(pGraph, pCtx, toBlock)) {
                 BlockWeight maxToWeight = pCtx.blockWeights.max(toBlock.value);
 
                 // Use the existing move method to transfer the node
@@ -420,10 +538,21 @@ public class GreedyBalancer extends Refiner {
         return false;
     }
 
-
     private boolean isUnderloaded(PartitionedGraph pGraph, PartitionContext pCtx, BlockID block) {
         long blockWeight = pGraph.blockWeight(block).value;
         long maxBlockWeight = pCtx.blockWeights.max(block.value).value;
+        long perfectlyBalancedWeight = pCtx.blockWeights.perfectlyBalanced(block.value).value;
+        long minBlockWeight = perfectlyBalancedWeight - pCtx.absoluteEpsilon;
+
+        // Check if the block weight is less than the maxBlockWeight but not below the minimum allowed weight
+        return blockWeight < maxBlockWeight && blockWeight >= minBlockWeight;
+    }
+    private boolean CanAcceptNodes(PartitionedGraph pGraph, PartitionContext pCtx, BlockID block) {
+        long blockWeight = pGraph.blockWeight(block).value;
+        long maxBlockWeight = pCtx.blockWeights.max(block.value).value;
+
+
+        // Check if the block weight is less than the maxBlockWeight but not below the minimum allowed weight
         return blockWeight < maxBlockWeight;
     }
 

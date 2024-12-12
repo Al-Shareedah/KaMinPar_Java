@@ -146,9 +146,40 @@ public class DeepMultilevelPartitioner extends Partitioner {
         }
 
         // If currentPCtx.k equals inputCtx.partition.k, update the blockWeights directly
+
         if (currentPCtx.k.equals(inputCtx.partition.k)) {
-            currentPCtx.blockWeights = new BlockWeightsContext(inputCtx.partition.blockWeights);
+            // Create new lists for perfectlyBalancedBlockWeights and maxBlockWeights
+            List<BlockWeight> newPerfectlyBalancedWeights = new ArrayList<>();
+            List<BlockWeight> newMaxBlockWeights = new ArrayList<>();
+
+            // Maintain the order of currentPCtx while finding the closest weights from inputCtx
+            for (BlockWeight currentWeight : currentPCtx.blockWeights.perfectlyBalancedBlockWeights) {
+                BlockWeight closestWeight = null;
+                long minDifference = Long.MAX_VALUE;
+
+                for (BlockWeight inputWeight : inputCtx.partition.blockWeights.perfectlyBalancedBlockWeights) {
+                    long difference = Math.abs(inputWeight.value - currentWeight.value);
+                    if (difference < minDifference) {
+                        minDifference = difference;
+                        closestWeight = inputWeight;
+                    }
+                }
+
+                // Add the matched weight to the new lists
+                if (closestWeight != null) {
+                    newPerfectlyBalancedWeights.add(closestWeight);
+                    newMaxBlockWeights.add(new BlockWeight(closestWeight.value + inputCtx.partition.absoluteEpsilon));
+                }
+            }
+
+            // Update currentPCtx.blockWeights manually
+            currentPCtx.blockWeights = new BlockWeightsContext();
+            currentPCtx.blockWeights.perfectlyBalancedBlockWeights = newPerfectlyBalancedWeights;
+            currentPCtx.blockWeights.maxBlockWeights = newMaxBlockWeights;
         }
+
+
+
 
 
 
@@ -236,9 +267,8 @@ public class DeepMultilevelPartitioner extends Partitioner {
         return cGraph;
     }
     private void calculateCCM(List<Integer> actualSizes, int totalNodes) {
-        List<Integer> desiredSizes = Arrays.asList(2522,3279,4262,5543);
+        List<Integer> desiredSizes = Arrays.asList(654, 850, 1105, 1437, 1868, 2429, 3157, 4106);
         int totalDifference = 0;
-        int partitionsNotMeetingSize = 0;
         double totalPercentageOff = 0.0;
 
         for (int i = 0; i < desiredSizes.size(); i++) {
@@ -246,21 +276,16 @@ public class DeepMultilevelPartitioner extends Partitioner {
             int difference = Math.abs(desiredSizes.get(i) - actualSize);
 
             totalDifference += difference;
-
-            if (difference > 0) {
-                partitionsNotMeetingSize++;
-                totalPercentageOff += (double) difference / desiredSizes.get(i) * 100.0;
-            }
+            totalPercentageOff += (double) difference / desiredSizes.get(i) * 100.0; // Add percentage deviation for all partitions
         }
 
-        double ncdm = (double) totalDifference / totalNodes;
-        double percentageNotMeetingSize = (double) partitionsNotMeetingSize / desiredSizes.size() * 100.0;
-        double averagePercentageOff = partitionsNotMeetingSize > 0 ? totalPercentageOff / partitionsNotMeetingSize : 0.0;
+        double ncdm = (double) totalDifference / totalNodes; // Cardinality Compliance Metric (CCM)
+        double mdp = totalPercentageOff / desiredSizes.size(); // Mean Deviation Percentage (MDP)
 
         Logger.log("Cardinality Compliance Metric (CCM): " + ncdm);
-        Logger.log("Percentage of partitions not meeting desired size: " + percentageNotMeetingSize + "%");
-        Logger.log("Average percentage by which partitions missed the desired size: " + averagePercentageOff + "%");
+        Logger.log("Mean Deviation Percentage (MDP): " + mdp + "%");
     }
+
     private void calculateConnectedComponentsAndCCM(PartitionedGraph pGraph) {
         Map<BlockID, Set<NodeID>> blockNodes = new HashMap<>();
 

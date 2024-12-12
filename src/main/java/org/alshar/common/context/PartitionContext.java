@@ -20,8 +20,7 @@ public class PartitionContext {
     // Queue for user-defined block weight constraints
     public Map<BlockWeight, Boolean> blockConstraints = new LinkedHashMap<>();
     public List<List<BlockWeight>> combinedBlockWeights = new ArrayList<>();
-
-
+    public int absoluteEpsilon;
 
 
     void setupBlockWeights() {
@@ -32,6 +31,7 @@ public class PartitionContext {
     }
     public PartitionContext(PartitionContext other) {
         this.epsilon = other.epsilon;
+        this.absoluteEpsilon = other.absoluteEpsilon;
         this.k = other.k;
         this.n = new NodeID(other.n.value);
         this.m = new EdgeID(other.m.value);

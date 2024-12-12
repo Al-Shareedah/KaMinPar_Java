@@ -172,12 +172,8 @@ public class BlockWeightsContext {
                         pCtx.combinedBlockWeights.set(b, combinedBlocksForThisPartition);  // Store combined blocks in PartitionContext
 
                         // Calculate the max block weight for this partition
-                        long maxBlockWeight = (long) ((1.0 + pCtx.epsilon) * mergedBlockWeight.value);
-                        if (pCtx.maxNodeWeight.value == 1) {
-                            maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
-                        } else {
-                            maxBlockWeights.set(b, new BlockWeight(Math.max(maxBlockWeight, mergedBlockWeight.value + pCtx.maxNodeWeight.value)));
-                        }
+                        long maxBlockWeight = mergedBlockWeight.value + pCtx.absoluteEpsilon;
+                        maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
                     }
 
                     // Ensure the remaining nodes are added if any remain (fail-safe)
@@ -190,12 +186,8 @@ public class BlockWeightsContext {
 
                         // Update the max block weight
                         int smallestBlockIndex = perfectlyBalancedBlockWeights.get(0).value < perfectlyBalancedBlockWeights.get(1).value ? 0 : 1;
-                        long maxBlockWeight = (long) ((1.0 + pCtx.epsilon) * smallestBlock.value);
-                        if (pCtx.maxNodeWeight.value == 1) {
-                            maxBlockWeights.set(smallestBlockIndex, new BlockWeight(maxBlockWeight));
-                        } else {
-                            maxBlockWeights.set(smallestBlockIndex, new BlockWeight(Math.max(maxBlockWeight, smallestBlock.value + pCtx.maxNodeWeight.value)));
-                        }
+                        long maxBlockWeight = smallestBlock.value + pCtx.absoluteEpsilon;
+                        maxBlockWeights.set(smallestBlockIndex, new BlockWeight(maxBlockWeight));
                     }
                 }
             });
@@ -336,12 +328,8 @@ public class BlockWeightsContext {
                         for (int b = 0; b < pCtx.k.value; b++) {
                             int finalK = PartitionUtils.computeFinalK(b, pCtx.k.value, inputK);
                             perfectlyBalancedBlockWeights.set(b, new BlockWeight((long) Math.ceil(finalK * blockWeight)));
-                            long maxBlockWeight = (long) ((1.0 + pCtx.epsilon) * perfectlyBalancedBlockWeights.get(b).value);
-                            if (pCtx.maxNodeWeight.value == 1) {
-                                maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
-                            } else {
-                                maxBlockWeights.set(b, new BlockWeight(Math.max(maxBlockWeight, perfectlyBalancedBlockWeights.get(b).value + pCtx.maxNodeWeight.value)));
-                            }
+                            long maxBlockWeight = perfectlyBalancedBlockWeights.get(b).value + pCtx.absoluteEpsilon;
+                            maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
                         }
                         return;  // Exit after reverting to fallback method
                     }
@@ -355,12 +343,8 @@ public class BlockWeightsContext {
                             perfectlyBalancedBlockWeights.set(b, selectedBlockWeight);
 
                             // Calculate max block weight
-                            long maxBlockWeight = (long) ((1.0 + pCtx.epsilon) * selectedBlockWeight.value);
-                            if (pCtx.maxNodeWeight.value == 1) {
-                                maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
-                            } else {
-                                maxBlockWeights.set(b, new BlockWeight(Math.max(maxBlockWeight, selectedBlockWeight.value + pCtx.maxNodeWeight.value)));
-                            }
+                            long maxBlockWeight = selectedBlockWeight.value + pCtx.absoluteEpsilon;
+                            maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
                         }
                     } else {
                         // Need to combine again and allocate
@@ -379,12 +363,8 @@ public class BlockWeightsContext {
                             perfectlyBalancedBlockWeights.set(b, mergedBlockWeight);
 
                             // Calculate max block weight
-                            long maxBlockWeight = (long) ((1.0 + pCtx.epsilon) * mergedBlockWeight.value);
-                            if (pCtx.maxNodeWeight.value == 1) {
-                                maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
-                            } else {
-                                maxBlockWeights.set(b, new BlockWeight(Math.max(maxBlockWeight, mergedBlockWeight.value + pCtx.maxNodeWeight.value)));
-                            }
+                            long maxBlockWeight = mergedBlockWeight.value + pCtx.absoluteEpsilon;
+                            maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
 
                             // Add combined blocks to combinedBlockWeights
                             pCtx.combinedBlockWeights.add(combinedBlocks);
@@ -423,7 +403,9 @@ public class BlockWeightsContext {
     public BlockWeight perfectlyBalanced(int b) {
         return perfectlyBalancedBlockWeights.get(b);
     }
-
+    public BlockWeight maxBlockWeights(int b) {
+        return maxBlockWeights.get(b);
+    }
     public List<BlockWeight> allPerfectlyBalanced() {
         return perfectlyBalancedBlockWeights;
     }
