@@ -1,0 +1,1561 @@
+Cardinality Skewness* (High Positive Skewness, Positive Skewness, Symmetric Distribution, Negative Skewness, High Negative Skewness)
+contraction limit will be 80%
+Time limit = 40 minutes
+##############################################################################
+Cardinality Skewness experiment:
+Graph #2: 4elt.graph
+k = 4
+Partition sizes will be set to High Positive Skewness [12000, 1200, 1200, 1206]
+###############################################################################
+
+		Results #1
+total_time_coarsening = 688
+total_time_initial partitioning = 28462
+total_time_uncoarsening = 29
+Total Time without Refinement: 29.179 s
+Total Time with Refinement: 29.179 s
+Edge Cut: 643
+CCM: 0.0
+Partition contiguous.
+
+ILP Improvment took: 0
+No improvment. Model is infeasible
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 779
+total_time_initial partitioning = 9752
+total_time_uncoarsening = 58
+Total Time without Refinement: 10.589 s
+Total Time with Refinement: 10.96 s
+
+CCM: 0.0
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 53 connected components.
+Edge Cut: 1800 
+
+ILP Improvment took: 0.371 seconds
+New Edge Cut: no refinement
+********
+
+KaHIP
+ILP took 0.15s
+Partitioning 0.530187
+Edge cut: 341
+CCM: 1.04601
+Block 0 -> 3957 and 1 component 
+Block 1 -> 3843 and 1 component 
+Block 2 -> 3957 and 1 component 
+Block 3 -> 3968 and 1 component 
+
+KaMinPar
+Edge cut:         391
+Cardinality Compliance Metric (CCM): 1.033961
+Block 0 -> 3902 and 1 component 
+Block 1 -> 3887 and 1 component 
+Block 2 -> 3932 and 1 component 
+Block 3 -> 3885 and 1 component 
+0.226 seconds
+
+	Results #2
+total_time_coarsening = 737
+total_time_initial partitioning = 24857
+total_time_uncoarsening = 29
+Total Time without Refinement: 25.623 s
+Total Time with Refinement: 25.623 s
+Edge Cut: 664
+CCM: 0.0
+Partition contiguous.
+
+ILP Improvment took: 0
+No improvment. Model is infeasible
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 742
+total_time_initial partitioning = 9289
+total_time_uncoarsening = 83
+Total Time without Refinement: 10.114 s
+Total Time with Refinement: 10.464 s
+CCM: 0.0
+Partition 2 is not contiguous. It has 38 connected components.
+Partition 3 is not contiguous. It has 7 connected components.
+Edge Cut: 1714
+ILP Improvment took: 0.35 seconds
+New Edge Cut: no refinement
+********
+
+
+
+	Results #3
+
+total_time_coarsening = 734
+total_time_initial partitioning = 21869
+total_time_uncoarsening = 26
+Total Time without Refinement: 22.629 s
+Total Time with Refinement: 22.629 s
+CCM: 0.0
+Partition is  contiguous. 
+Edge Cut: 875
+ILP Improvment took: 0
+No improvment. Model is infeasible
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 709
+total_time_initial partitioning = 9430
+total_time_uncoarsening = 75
+Total Time without Refinement: 10.214 s
+Total Time with Refinement: 10.633 s
+CCM: 0.0
+Partition 1 is not contiguous. It has 4 connected components.
+Partition 3 is not contiguous. It has 45 connected components.
+Edge Cut: 2108
+ILP Improvment took: 0.419 seconds
+New Edge Cut: no refinement
+********
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #2: 4elt.graph
+k = 4
+Partition sizes will be set to Positive Skewness [9000, 2200, 2200, 2206]
+###############################################################################
+		Results #1
+total_time_coarsening = 1243
+total_time_initial partitioning = 32624
+total_time_uncoarsening = 40
+Total Time without Refinement: 33.907 s
+Total Time with Refinement: 34.951 s
+
+Edge Cut: 1037
+CCM: 0.0
+Partition contiguous.
+
+ILP Improvment took: 1.44
+The new edge count is 793
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 864
+total_time_initial partitioning = 13231
+total_time_uncoarsening = 69
+Total Time without Refinement: 14.164 s
+Total Time with Refinement: 14.647 s
+CCM: 0.0
+Partition 3 is not contiguous. It has 52 connected components.
+Edge Cut: 2322
+ILP Improvment took: 0.483 seconds
+New Edge Cut: no refinement
+********
+
+KaHIP
+ILP took 0.15s
+Partitioning 0.530187
+Edge cut: 341
+CCM: 0.66154
+Block 0 -> 3838 and 1 component 
+Block 1 -> 3843 and 1 component 
+Block 2 -> 3957 and 1 component 
+Block 3 -> 3968 and 1 component 
+
+KaMinPar
+Edge cut:         391
+Cardinality Compliance Metric (CCM): 0.649
+Block 0 -> 3902 and 1 component 
+Block 1 -> 3887 and 1 component 
+Block 2 -> 3932 and 1 component 
+Block 3 -> 3885 and 1 component 
+0.330 seconds
+
+	Results #2
+total_time_coarsening = 803
+total_time_initial partitioning = 28584
+total_time_uncoarsening = 49
+Edge Cut: 1209
+CCM: 0.0
+Partition contiguous.
+
+ILP Improvment took: 1.65
+The new edge count is 874
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 715
+total_time_initial partitioning = 13983
+total_time_uncoarsening = 69
+Total Time without Refinement: 14.767 s
+Total Time with Refinement: 15.267 s
+CCM: 0.0
+Partition 3 is not contiguous. It has 100 connected components.
+Edge Cut: 3553
+ILP Improvment took: 0.500 seconds
+New Edge Cut: no refinement
+********
+
+
+
+	Results #3
+
+total_time_coarsening = 718
+total_time_initial partitioning = 28901
+total_time_uncoarsening = 26
+Total Time without Refinement: 29.645 s
+Total Time with Refinement: 31.955 s
+CCM: 0.0
+Partition contiguous.
+Edge Cut: 1078
+
+ILP Improvment took: 2.31
+The new edge count is 616
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 685
+total_time_initial partitioning = 14094
+total_time_uncoarsening = 74
+Total Time without Refinement: 14.853 s
+Total Time with Refinement: 15.431 s
+CCM: 0.0
+Partition 2 is not contiguous. It has 8 connected components.
+Partition 3 is not contiguous. It has 81 connected components.
+Edge Cut: 3524
+ILP Improvment took: 0.578 seconds
+New Edge Cut: no refinement
+********
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #2: 4elt.graph
+k = 4
+Partition sizes will be set to Symmetric Skewness [3902, 3901, 3901, 3902]
+###############################################################################
+	Results #1
+total_time_coarsening = 906
+total_time_initial partitioning = 27813
+total_time_uncoarsening = 40
+Edge Cut: 1354
+CCM: 0.0
+Partition contiguous.
+
+ILP Improvment took: 0.73
+The new edge count is 951
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 805
+total_time_initial partitioning = 652
+total_time_uncoarsening = 66
+CCM: 0.0
+Partition 0 is not contiguous. It has 2 connected components.
+Partition 2 is not contiguous. It has 19 connected components.
+Partition 3 is not contiguous. It has 63 connected components.
+Edge Cut: 2407
+ILP Improvment took: 15.07 seconds
+New Edge Cut: 1191
+Partition 0 is not contiguous. It has 2 connected components.
+Partition 1 is not contiguous. It has 4 connected components.
+Partition 2 is not contiguous. It has 10 connected components.
+Partition 3 is not contiguous. It has 5 connected components.
+********
+
+KaHIP
+ILP took 0.33s
+Partitioning 0.530187
+Edge cut: 341
+CCM: 0.015
+Block 0 -> 3838 and 1 component 
+Block 1 -> 3843 and 1 component 
+Block 2 -> 3957 and 1 component 
+Block 3 -> 3968 and 1 component 
+
+KaMinPar
+Edge cut:         391
+Cardinality Compliance Metric (CCM): 0.0038
+Block 0 -> 3902 and 1 component 
+Block 1 -> 3887 and 1 component 
+Block 2 -> 3932 and 1 component 
+Block 3 -> 3885 and 1 component 
+0.330 seconds
+
+	Results #2
+total_time_coarsening = 715
+total_time_initial partitioning = 29559
+total_time_uncoarsening = 29
+Edge Cut: 949
+CCM: 0.0
+Partition contiguous.
+
+ILP Improvment took: 2.60
+The new edge count is 765
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 695
+total_time_initial partitioning = 768
+total_time_uncoarsening = 67
+CCM: 0.0
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 94 connected components.
+Edge Cut: 3050
+ILP Improvment took: 8.51 seconds
+New Edge Cut: 1689 
+Partition 0 is not contiguous. It has 2 connected components.
+Partition 3 is not contiguous. It has 15 connected components.
+********
+
+
+
+	Results #3
+
+total_time_coarsening = 710
+total_time_initial partitioning = 30102
+total_time_uncoarsening = 27
+CCM: 0.0
+Partition contiguous.
+Edge Cut: 1118
+
+ILP Improvment took: 0.64
+The new edge count is 803
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 691
+total_time_initial partitioning = 614
+total_time_uncoarsening = 72
+CCM: 0.0
+Partition 2 is not contiguous. It has 24 connected components.
+Partition 3 is not contiguous. It has 95 connected components.
+Edge Cut: 3524
+ILP Improvment took: 51.86 seconds
+New Edge Cut: 1576 
+Partition 0 is not contiguous. It has 4 connected components.
+Partition 2 is not contiguous. It has 6 connected components.
+Partition 3 is not contiguous. It has 12 connected components.
+********
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #2: 4elt.graph
+k = 4
+Partition sizes will be set to Negative Skewness [3000, 4200, 4200, 4206]
+###############################################################################
+	Results #1
+total_time_coarsening = 758
+total_time_initial partitioning = 30379
+total_time_uncoarsening = 28
+Edge Cut: 1149
+CCM: 0.0
+Partition contiguous.
+
+ILP Improvment took: 0
+No improvment
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 787
+total_time_initial partitioning = 585
+total_time_uncoarsening = 66
+CCM: 0.0
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 99 connected components.
+Edge Cut: 2717
+ILP Improvment took: 6.13 seconds
+New Edge Cut: 1414
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 6 connected components.
+********
+
+KaHIP
+ILP took 0.33s
+Partitioning 0.530187
+Edge cut: 341
+CCM: 0.107
+Block 0 -> 3838 and 1 component 
+Block 1 -> 3843 and 1 component 
+Block 2 -> 3957 and 1 component 
+Block 3 -> 3968 and 1 component 
+
+KaMinPar
+Edge cut:         391
+Cardinality Compliance Metric (CCM): 0.119
+Block 0 -> 3902 and 1 component 
+Block 1 -> 3887 and 1 component 
+Block 2 -> 3932 and 1 component 
+Block 3 -> 3885 and 1 component 
+0.330 seconds
+
+	Results #2
+total_time_coarsening = 713
+total_time_initial partitioning = 29044
+total_time_uncoarsening = 30
+Edge Cut: 891
+CCM: 0.0
+Partition contiguous.
+
+ILP Improvment took: 0
+No Improvment
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 875
+total_time_initial partitioning = 677
+total_time_uncoarsening = 74
+CCM: 0.0
+Partition 2 is not contiguous. It has 6 connected components.
+Partition 3 is not contiguous. It has 121 connected components.
+Edge Cut: 2854
+ILP Improvment took: 12.17 seconds
+New Edge Cut: 1381 
+Partition 0 is not contiguous. It has 2 connected components.
+Partition 2 is not contiguous. It has 2 connected components.
+Partition 3 is not contiguous. It has 13 connected components.
+********
+
+
+
+	Results #3
+
+total_time_coarsening = 710
+total_time_initial partitioning = 30333
+total_time_uncoarsening = 30
+CCM: 0.0
+Partition contiguous.
+Edge Cut: 1662
+
+ILP Improvment took: 0
+No Improvment
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 791
+total_time_initial partitioning = 720
+total_time_uncoarsening = 64
+CCM: 0.0
+Partition 2 is not contiguous. It has 22 connected components.
+Partition 3 is not contiguous. It has 67 connected components.
+Edge Cut: 3110
+ILP Improvment took: 4.83 seconds
+New Edge Cut: 1669
+********
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #2: 4elt.graph
+k = 4
+Partition sizes will be set to High Negative Skewness [1200, 4802, 4802, 4802]
+###############################################################################
+	Results #1
+total_time_coarsening = 949
+total_time_initial partitioning = 29686
+total_time_uncoarsening = 1069
+Edge Cut: 1766
+CCM: 0.0
+Partition contiguous.
+
+ILP Improvment took: 6.87
+New edge cut: 991
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 764
+total_time_initial partitioning = 630
+total_time_uncoarsening = 70
+CCM: 0.0
+Partition 2 is not contiguous. It has 16 connected components.
+Partition 3 is not contiguous. It has 58 connected components.
+Edge Cut: 2442
+ILP Improvment took: 6.28 seconds
+New Edge Cut: 1299
+Partition 0 is not contiguous. It has 4 connected components.
+Partition 2 is not contiguous. It has 6 connected components.
+Partition 3 is not contiguous. It has 6 connected components.
+********
+
+KaHIP
+ILP took 0.33s
+Partitioning 0.530187
+Edge cut: 341
+CCM: 0.338
+Block 0 -> 3838 and 1 component 
+Block 1 -> 3843 and 1 component 
+Block 2 -> 3957 and 1 component 
+Block 3 -> 3968 and 1 component 
+
+KaMinPar
+Edge cut:         391
+Cardinality Compliance Metric (CCM): 0.350
+Block 0 -> 3902 and 1 component 
+Block 1 -> 3887 and 1 component 
+Block 2 -> 3932 and 1 component 
+Block 3 -> 3885 and 1 component 
+0.330 seconds
+
+	Results #2
+total_time_coarsening = 953
+total_time_initial partitioning = 27502
+total_time_uncoarsening = 42
+Edge Cut: 1325
+CCM: 0.0
+Partition contiguous.
+
+ILP Improvment took: 1.75
+The new Edge Cut: 870
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 719
+total_time_initial partitioning = 621
+total_time_uncoarsening = 58
+CCM: 0.0
+Partition 2 is not contiguous. It has 11 connected components.
+Partition 3 is not contiguous. It has 92 connected components.
+Edge Cut: 3024
+ILP Improvment took: 7.37
+New Edge Cut:  1618
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 16 connected components.
+
+********
+
+
+
+	Results #3
+
+total_time_coarsening = 770
+total_time_initial partitioning = 26068
+total_time_uncoarsening = 38
+CCM: 0.0
+Partition contiguous.
+Edge Cut: 1206
+
+ILP Improvment took: 2.51
+New Edge Cut: 725 
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 709
+total_time_initial partitioning = 551
+total_time_uncoarsening = 89
+CCM: 0.0
+Partition 2 is not contiguous. It has 4 connected components.
+Partition 3 is not contiguous. It has 87 connected components.
+Edge Cut: 2818
+ILP Improvment took: 13.67 seconds
+New Edge Cut:  1441
+Partition 0 is not contiguous. It has 2 connected components.
+Partition 2 is not contiguous. It has 2 connected components.
+Partition 3 is not contiguous. It has 12 connected components.
+********
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #1: PGPgiantcompo.graph
+k = 4
+Partition sizes will be set to High Positive Skewness [1017, 1728, 2937, 4998]
+###############################################################################
+	Results #1
+total_time_coarsening = 1706
+total_time_initial partitioning = 18880
+total_time_uncoarsening = 2140
+total_time = 22.726
+Edge Cut: 2663
+CCM: 0.0
+Partition 0 is contiguous. It has 1 connected components.
+Partition 1 is contiguous. It has 1 connected components.
+Partition 2 is contiguous. It has 1 connected components.
+Partition 3 is not contiguous. It has 388 connected components.
+
+ILP Improvment took: 222.41s
+total_time = 245.136
+edge cut = 1549
+CCM: 0.0
+Partition 0 is not contiguous. It has 22 connected components.
+Partition 1 is not contiguous. It has 21 connected components.
+Partition 2 is not contiguous. It has 17 connected components.
+Partition 3 is not contiguous. It has 58 connected components.
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 1182
+total_time_initial partitioning = 598
+total_time_uncoarsening = 41
+total_time= 1.821
+CCM: 0.0
+Partition 0 is not contiguous. It has 14 connected components.
+Partition 1 is not contiguous. It has 9 connected components.
+Partition 2 is not contiguous. It has 16 connected components.
+Partition 3 is not contiguous. It has 766 connected components.
+Edge Cut: 3462
+ILP Improvment took: 293.247 seconds
+New Edge Cut: 1731
+********
+
+KaHIP
+ILP took 11.3874s
+Edge cut: 782
+Percentage of partitions not meeting desired size: 100%
+Average percentage by which partitions missed the desired size: 71.7388%
+CCM: 0.514794
+Block 0 -> 2749 and 2 component 
+Block 1 -> 2745 and 4 component 
+Block 2 -> 2738 and 10 component 
+Block 3 -> 2448 and 15 component 
+
+KaMinPar
+Edge cut:         725
+Percentage of partitions not meeting desired size: 100%
+Average percentage by which partitions missed the desired size: 66.493979%
+Cardinality Compliance Metric (CCM): 0.471348
+Block 0 -> 2586 and 10 component 
+Block 1 -> 2683 and 5 component 
+Block 2 -> 2676 and 3 component 
+Block 3 -> 2735 and 1 component 
+run time = 0.224 seconds
+
+	Results #2
+total_time_coarsening = 1618
+total_time_initial partitioning = 19198
+total_time_uncoarsening = 5278
+total_time = 26.094
+Edge Cut: 2088
+CCM: 0.0
+Partition 0 is contiguous. It has 1 connected components.
+Partition 1 is contiguous. It has 1 connected components.
+Partition 2 is contiguous. It has 1 connected components.
+Partition 3 is not contiguous. It has 187 connected components.
+
+ILP refinement
+total_time = 121.834
+Edge Cut: 1265
+CCM: 0.0
+Partition 0 is not contiguous. It has 21 connected components.
+Partition 1 is not contiguous. It has 29 connected components.
+Partition 2 is not contiguous. It has 19 connected components.
+Partition 3 is not contiguous. It has 27 connected components.
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 1165
+total_time_initial partitioning = 364
+total_time_uncoarsening = 71
+total_time= 1.6
+CCM: 0.0
+Partition 0 is not contiguous. It has 9 connected components.
+Partition 1 is not contiguous. It has 4 connected components.
+Partition 2 is not contiguous. It has 13 connected components.
+Partition 3 is not contiguous. It has 684 connected components.
+Edge Cut: 3378
+
+ILP Improvment took: 1421.89
+New Edge Cut: 1644
+
+Partition 0 is not contiguous. It has 18 connected components.
+Partition 1 is not contiguous. It has 62 connected components.
+Partition 2 is not contiguous. It has 42 connected components.
+Partition 3 is not contiguous. It has 156 connected components.
+********
+
+
+
+	Results #3
+
+total_time_coarsening = 1382
+total_time_initial partitioning = 19528
+total_time_uncoarsening = 1240
+total_time = 22.15
+CCM: 0.0
+Partition 0 is contiguous. It has 1 connected components.
+Partition 1 is contiguous. It has 1 connected components.
+Partition 2 is contiguous. It has 1 connected components.
+Partition 3 is not contiguous. It has 596 connected components.
+Edge Cut: 2544
+
+total_time = 51.05
+Edge Cut: 1329
+CCM: 0
+Partition 0 is not contiguous. It has 4 connected components.
+Partition 1 is not contiguous. It has 12 connected components.
+Partition 2 is not contiguous. It has 31 connected components.
+Partition 3 is not contiguous. It has 103 connected components.
+
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #1: PGPgiantcompo.graph
+k = 4
+Partition sizes will be set to f= 0.3 Positive Skewness [1726, 2244, 2927, 3783]
+###############################################################################
+	Results #1
+total_time_coarsening = 2090
+total_time_initial partitioning = 26154
+total_time_uncoarsening = 3812
+total_time = 32.056
+Edge Cut: 2347
+CCM: 0.0
+Partition 3 is not contiguous. It has 118 connected components.
+
+total_time = 135.577
+The new edge cut: 1464
+CCM: 0.0
+Partition 0 is not contiguous. It has 14 connected components.
+Partition 1 is not contiguous. It has 29 connected components.
+Partition 2 is not contiguous. It has 28 connected components.
+Partition 3 is not contiguous. It has 19 connected components.
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 1138
+total_time_initial partitioning = 319
+total_time_uncoarsening = 59
+total_time= 1.516
+CCM: 0.0
+Partition 0 is not contiguous. It has 61 connected components.
+Partition 1 is not contiguous. It has 42 connected components.
+Partition 2 is not contiguous. It has 48 connected components.
+Partition 3 is not contiguous. It has 165 connected components.
+Edge Cut: 1789
+ILP Improvment took: 1029.608 seconds
+New Edge Cut: no refinement
+********
+
+KaHIP
+ILP took 10.3874s
+Edge cut: 782
+Percentage of partitions not meeting desired size: 100%
+Average percentage by which partitions missed the desired size: 30.8357%
+CCM: 0.285393
+Block 0 -> 2749 and 2 component 
+Block 1 -> 2745 and 4 component 
+Block 2 -> 2738 and 10 component 
+Block 3 -> 2448 and 15 component 
+
+KaMinPar
+Edge cut:         725
+Percentage of partitions not meeting desired size: 100%
+Average percentage by which partitions missed the desired size: 26.479567%
+Cardinality Compliance Metric (CCM): 0.241948
+Block 0 -> 2586 and 10 component 
+Block 1 -> 2683 and 5 component 
+Block 2 -> 2676 and 3 component 
+Block 3 -> 2735 and 1 component 
+run time = 0.221 seconds
+
+	Results #2
+total_time_coarsening = 1428
+total_time_initial partitioning = 20122
+total_time_uncoarsening = 705
+total_time = 22.255
+Edge Cut: 3422
+CCM: 0.0
+Partition 3 is not contiguous. It has 424 connected components.
+
+total_time = 2423.44
+The new Edge cut: 1861
+CCM: 0
+Partition 0 is not contiguous. It has 49 connected components.
+Partition 1 is not contiguous. It has 45 connected components.
+Partition 2 is not contiguous. It has 42 connected components.
+Partition 3 is not contiguous. It has 53 connected components.
+
+
+
+
+	Results #3
+
+total_time_coarsening = 1129
+total_time_initial partitioning = 19127
+total_time_uncoarsening = 2359
+total_time=22.615
+CCM: 0.0
+Partition 3 is not contiguous. It has 102 connected components.
+Edge Cut: 2264
+
+ILP Improvment took: 44.643
+total_time = 67.258
+The new edge cut: 1490
+CCM: 0.0
+Partition 0 is not contiguous. It has 8 connected components.
+Partition 1 is not contiguous. It has 11 connected components.
+Partition 2 is not contiguous. It has 23 connected components.
+Partition 3 is not contiguous. It has 22 connected components.
+
+
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #1: PGPgiantcompo.graph
+k = 4
+Partition sizes will be set to Symmetric Skewness [2670, 2670, 2670, 2670]
+###############################################################################
+	Results #1
+total_time_coarsening = 1120
+total_time_initial partitioning = 17247
+total_time_uncoarsening = 581
+total_time = 18.948 s
+Edge Cut: 2810
+CCM: 0.0
+Partition 3 is not contiguous. It has 427 connected components.
+
+ILP Improvment took: 232.843
+The new edge cut: 1595
+Partition 0 is not contiguous. It has 11 connected components.
+Partition 1 is not contiguous. It has 15 connected components.
+Partition 2 is not contiguous. It has 19 connected components.
+Partition 3 is not contiguous. It has 159 connected components.
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 1298
+total_time_initial partitioning = 319
+total_time_uncoarsening = 61
+total_time= 1.678
+CCM: 0.0
+Partition 0 is not contiguous. It has 16 connected components.
+Partition 1 is not contiguous. It has 8 connected components.
+Partition 2 is not contiguous. It has 171 connected components.
+Partition 3 is not contiguous. It has 487 connected components.
+Edge Cut: 2936
+ILP Improvment took: 43.608
+New Edge Cut: 1538
+Partition 0 is not contiguous. It has 17 connected components.
+Partition 1 is not contiguous. It has 28 connected components.
+Partition 2 is not contiguous. It has 46 connected components.
+Partition 3 is not contiguous. It has 104 connected components.
+********
+
+KaHIP
+ILP took 11.5607s
+Edge cut: 782
+Percentage of partitions not meeting desired size: 100%
+Average percentage by which partitions missed the desired size: 4.1573%
+CCM: 0.285393
+Block 0 -> 2749 and 2 component 
+Block 1 -> 2745 and 4 component 
+Block 2 -> 2738 and 10 component 
+Block 3 -> 2448 and 15 component 
+
+KaMinPar
+Edge cut:         725
+Percentage of partitions not meeting desired size: 100%
+Average percentage by which partitions missed the desired size: 1.573034%
+Cardinality Compliance Metric (CCM): 0.015730
+Block 0 -> 2586 and 10 component 
+Block 1 -> 2683 and 5 component 
+Block 2 -> 2676 and 3 component 
+Block 3 -> 2735 and 1 component 
+run time = 0.232 seconds
+
+	Results #2
+total_time_coarsening = 1211
+total_time_initial partitioning = 18002
+total_time_uncoarsening = 1409
+total_time = 20.622
+Edge Cut: 2537
+CCM: 0.0
+Partition 3 is not contiguous. It has 112 connected components.
+
+ILP Improvment took: 372.641 s
+The new Edge cut: 1417
+Partition 0 is not contiguous. It has 16 connected components.
+Partition 1 is not contiguous. It has 13 connected components.
+Partition 2 is not contiguous. It has 10 connected components.
+Partition 3 is not contiguous. It has 51 connected components.
+
+
+
+
+
+	Results #3
+
+total_time_coarsening = 1081
+total_time_initial partitioning = 16690
+total_time_uncoarsening = 605
+total_time = 18.376
+CCM: 0.0
+Partition 3 is not contiguous. It has 557 connected components.
+Edge Cut: 2792
+
+total_time = 63.573
+The new edge cut: 1527
+Partition 0 is not contiguous. It has 63 connected components.
+Partition 1 is not contiguous. It has 17 connected components.
+Partition 2 is not contiguous. It has 24 connected components.
+Partition 3 is not contiguous. It has 177 connected components.
+******
+PRRP without merge and split phases
+total_time_coarsening = 1377
+total_time_initial partitioning = 241
+total_time_uncoarsening = 52
+total_time= 1.670
+CCM: 0.0
+Partition 0 is not contiguous. It has 3 connected components.
+Partition 1 is not contiguous. It has 28 connected components.
+Partition 2 is not contiguous. It has 42 connected components.
+Partition 3 is not contiguous. It has 629 connected components.
+Edge Cut: 3390
+ILP Improvment took: 1079.5s
+New Edge Cut:  1568
+Partition 0 is not contiguous. It has 82 connected components.
+Partition 1 is not contiguous. It has 43 connected components.
+Partition 2 is not contiguous. It has 29 connected components.
+Partition 3 is not contiguous. It has 142 connected components.
+********
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #1: PGPgiantcompo.graph
+k = 4
+Partition sizes will be set to Negative  Skewness [4217, 2952, 2066, 1445]
+###############################################################################
+	Results #1
+total_time_coarsening = 1277
+total_time_initial partitioning = 18209
+total_time_uncoarsening = 559
+total_time = 20.045
+Edge Cut: 2907
+CCM: 0.0
+Partition 3 is not contiguous. It has 340 connected components
+
+total_time = 1035.963
+The new edge cut: 1520
+Partition 0 is not contiguous. It has 14 connected components.
+Partition 1 is not contiguous. It has 31 connected components.
+Partition 2 is not contiguous. It has 32 connected components.
+Partition 3 is not contiguous. It has 113 connected components.
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 1480
+total_time_initial partitioning =  6639
+total_time_uncoarsening = 53
+total_time= 8.172
+CCM: 0.0
+Partition 0 is not contiguous. It has 7 connected components.
+Partition 1 is not contiguous. It has 12 connected components.
+Partition 2 is not contiguous. It has 17 connected components.
+Partition 3 is not contiguous. It has 654 connected components.
+Edge Cut: 3600
+
+ILP Improvment took: 459.362 seconds (time limit)
+New Edge Cut: 2026
+Partition 0 is not contiguous. It has 96 connected components.
+Partition 1 is not contiguous. It has 30 connected components.
+Partition 2 is not contiguous. It has 100 connected components.
+Partition 3 is not contiguous. It has 230 connected components.
+********
+
+KaHIP
+ILP took 10.3874s
+Edge cut: 782
+Percentage of partitions not meeting desired size: 100%
+Average percentage by which partitions missed the desired size: 35.9405%
+CCM: 0.31367
+Block 0 -> 2749 and 2 component 
+Block 1 -> 2745 and 4 component 
+Block 2 -> 2738 and 10 component 
+Block 3 -> 2448 and 15 component 
+
+KaMinPar
+Edge cut:         725
+Percentage of partitions not meeting desired size: 100%
+Average percentage by which partitions missed the desired size: 41.749273%
+Cardinality Compliance Metric (CCM): 0.357116
+Block 0 -> 2586 and 10 component 
+Block 1 -> 2683 and 5 component 
+Block 2 -> 2676 and 3 component 
+Block 3 -> 2735 and 1 component 
+run time = 0.256 seconds
+
+	Results #2
+total_time_coarsening = 1252
+total_time_initial partitioning = 17289
+total_time_uncoarsening = 472
+total_time = 19.013
+Edge Cut: 3024
+CCM: 0.0
+Partition 3 is not contiguous. It has 354 connected components.
+
+total_time= 847.905
+The new Edge cut: 1540
+Partition 0 is not contiguous. It has 25 connected components.
+Partition 1 is not contiguous. It has 24 connected components.
+Partition 2 is not contiguous. It has 33 connected components.
+Partition 3 is not contiguous. It has 87 connected components.
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 1447
+total_time_initial partitioning = 7347
+total_time_uncoarsening = 56
+total_time= 8.850
+CCM: 0.0
+Partition 0 is not contiguous. It has 14 connected components.
+Partition 1 is not contiguous. It has 11 connected components.
+Partition 2 is not contiguous. It has 15 connected components.
+Partition 3 is not contiguous. It has 732 connected components.
+Edge Cut: 3553
+ILP Improvment took: 491.66
+New Edge Cut: 2096
+Partition 0 is not contiguous. It has 166 connected components.
+Partition 1 is not contiguous. It has 22 connected components.
+Partition 2 is not contiguous. It has 102 connected components.
+Partition 3 is not contiguous. It has 216 connected components.
+********
+
+
+
+	Results #3
+
+total_time_coarsening = 1292
+total_time_initial partitioning = 18327
+total_time_uncoarsening = 435
+total_time = 20.054
+CCM: 0.0
+Partition 3 is not contiguous. It has 361 connected components.
+Edge Cut: 2344
+
+total_time= 52
+The new edge cut: 1304
+Partition 0 is not contiguous. It has 10 connected components.
+Partition 1 is not contiguous. It has 15 connected components.
+Partition 2 is not contiguous. It has 53 connected components.
+Partition 3 is not contiguous. It has 88 connected components.
+
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #1: PGPgiantcompo.graph
+k = 4
+Partition sizes will be set to High Negative Skewness [7538, 2261, 678, 203]
+###############################################################################
+	Results #1
+total_time_coarsening = 1395
+total_time_initial partitioning = 18922
+total_time_uncoarsening = 972
+total_time= 21.289s
+Edge Cut: 2470
+CCM: 0.0
+Partition 3 is not contiguous. It has 231 connected components.
+
+ILP Improvment took: 0.0 s
+The new edge cut: 2470
+CCM: 0.0
+Partition 0 is contiguous. It has 1 connected components.
+Partition 1 is contiguous. It has 1 connected components.
+Partition 2 is contiguous. It has 1 connected components.
+Partition 3 is not contiguous. It has 231 connected components.
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 1321
+total_time_initial partitioning = 5514
+total_time_uncoarsening = 91
+total_time= 6.926
+CCM: 0.0
+Partition 1 is not contiguous. It has 11 connected components.
+Partition 2 is not contiguous. It has 16 connected components.
+Partition 3 is not contiguous. It has 319 connected components.
+Edge Cut: 2420
+
+ILP Improvment took: 0 seconds
+New Edge Cut: 2420
+CCM:0.0
+Partition 1 is not contiguous. It has 11 connected components.
+Partition 2 is not contiguous. It has 16 connected components.
+Partition 3 is not contiguous. It has 319 connected components.
+********
+
+KaHIP
+ILP took 9.55206s
+Edge cut: 782
+Percentage of partitions not meeting desired size: 100%
+Average percentage by which partitions missed the desired size: 373.671%
+CCM: 0.285393
+Block 0 -> 2749 and 2 component 
+Block 1 -> 2745 and 4 component 
+Block 2 -> 2738 and 10 component 
+Block 3 -> 2448 and 15 component 
+
+KaMinPar
+Edge cut:         725
+Percentage of partitions not meeting desired size: 100%
+Average percentage by which partitions missed the desired size: 400.985311%
+Cardinality Compliance Metric (CCM): 0.910487
+Block 0 -> 2586 and 10 component 
+Block 1 -> 2683 and 5 component 
+Block 2 -> 2676 and 3 component 
+Block 3 -> 2735 and 1 component 
+run time = 0.390 seconds
+
+	Results #2
+total_time_coarsening = 1209
+total_time_initial partitioning = 17905
+total_time_uncoarsening = 680
+total_time= 19.794
+Edge Cut: 2265
+CCM: 0.0
+Partition 3 is not contiguous. It has 295 connected components.
+
+total_time= 19.794
+CCM: 0.0
+The new Edge cut: 2265
+Partition 3 is not contiguous. It has 295 connected components.
+
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 1553
+total_time_initial partitioning = 4513
+total_time_uncoarsening = 55
+total_time= 6.121
+CCM: 0.0
+Partition 0 is not contiguous. It has 8 connected components.
+Partition 1 is not contiguous. It has 11 connected components.
+Partition 2 is not contiguous. It has 4 connected components.
+Partition 3 is not contiguous. It has 376 connected components.
+Edge Cut: 2858
+
+ILP Improvment took: 0 seconds
+New Edge Cut: 2858
+CCM:0.0
+Partition 0 is not contiguous. It has 8 connected components.
+Partition 1 is not contiguous. It has 11 connected components.
+Partition 2 is not contiguous. It has 4 connected components.
+Partition 3 is not contiguous. It has 376 connected components.
+********
+
+
+	Results #3
+
+total_time_coarsening = 1184
+total_time_initial partitioning = 17153
+total_time_uncoarsening = 12160
+total_time= 30.497
+CCM: 0.0
+Partition 0 is not contiguous. It has 53 connected components.
+Partition 1 is not contiguous. It has 4 connected components.
+Partition 2 is not contiguous. It has 2 connected components.
+Partition 3 is not contiguous. It has 82 connected components.
+Edge Cut: 2038
+
+total_time= 252.909s
+The new edge cut: 942
+Partition 0 is not contiguous. It has 13 connected components.
+Partition 1 is not contiguous. It has 23 connected components.
+Partition 2 is not contiguous. It has 50 connected components.
+Partition 3 is not contiguous. It has 23 connected components.
+
+
+
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #3: email.graph
+k = 4
+Partition sizes will be set to High Positive Skewness [108, 184, 314, 527] 
+###############################################################################
+	Results #1
+total_time_coarsening = 317
+total_time_initial partitioning = 2206
+total_time_uncoarsening = 229
+total_time= 2.752
+Edge Cut: 2486
+CCM: 0.0
+Partition 3 is not contiguous. It has 23 connected components.
+
+ILP Improvment took: 2403.199 s
+The new edge cut: 1517
+Partition 1 is not contiguous. It has 2 connected components.
+Partition 2 is not contiguous. It has 28 connected components.
+Partition 3 is not contiguous. It has 2 connected components.
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 377
+total_time_initial partitioning = 39
+total_time_uncoarsening = 20
+Total Time without refinement : 0.436 s
+Total time with refinement: 2400.384 s
+CCM: 0.0
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 25 connected components.
+Edge Cut: 2580
+
+ILP Improvment took: 2400 seconds
+New Edge Cut: 1488
+CCM: 0.0
+Partition 0 is not contiguous. It has 36 connected components.
+Partition 1 is not contiguous. It has 2 connected components.
+Partition 2 is not contiguous. It has 7 connected components.
+Partition 3 is not contiguous. It has 3 connected components.
+********
+
+KaHIP
+ILP took 2400s Time limit
+Edge cut: 1235
+Percentage of partitions not meeting desired size: 100%
+Average percentage by which partitions missed the desired size: 65.4107%
+CCM: 0.453663
+Block 0 -> 292 and 2 component
+Block 1 -> 257 and 35 component
+Block 2 -> 292 and 1 component
+Block 3 -> 292 and 1 component
+
+KaMinPar
+Edge cut:         1258
+Cardinality Compliance Metric (CCM): 0.487202
+Percentage of partitions not meeting desired size: 100.0%
+Average percentage by which partitions missed the desired size: 68.580065%
+Block 0 -> 290 and 1 component
+Block 1 -> 285 and 1 component
+Block 2 -> 283 and 1 component
+Block 3 -> 275 and 2 component
+Run time: 0.173 seconds
+
+	Results #2
+total_time_coarsening = 358
+total_time_initial partitioning = 2225
+total_time_uncoarsening = 250
+total_time= 2.833
+Edge Cut: 2470
+CCM: 0.0
+Partition 3 is not contiguous. It has 29 connected components.
+
+ILP Improvment took:2402.833
+edge cut: 2242
+CCM:00
+Partition 0 is not contiguous. It has 4 connected components.
+Partition 3 is not contiguous. It has 18 connected components.
+
+
+
+
+	Results #3
+
+total_time_coarsening = 337
+total_time_initial partitioning = 2401
+total_time_uncoarsening = 251
+total_time= 2.989
+CCM: 0.0
+Partition 3 is not contiguous. It has 3 connected components.
+Edge Cut: 2452
+
+ILP Improvment took: 2403.416
+edge cut: 1631
+CCM: 0.0
+Partition 0 is not contiguous. It has 33 connected components.
+Partition 1 is not contiguous. It has 82 connected components.
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 10 connected components.
+
+
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #3: email.graph
+k = 4
+Partition sizes will be set to Positive Skewness [183, 238, 310, 402]
+###############################################################################
+	Results #1
+total_time_coarsening = 350
+total_time_initial partitioning = 2407
+total_time_uncoarsening = 247
+total_time= 3.004s
+Edge Cut: 2540
+CCM: 0.00529567519858782
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 22 connected components.
+
+ILP Improvment took: 2400 s (Time limit)
+The new edge cut: 1961
+CCM: 0.0
+Partition 0 is not contiguous. It has 35 connected components.
+Partition 1 is not contiguous. It has 43 connected components.
+Partition 3 is not contiguous. It has 4 connected components.
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 387
+total_time_initial partitioning = 38
+total_time_uncoarsening = 19
+Total Time without refinement :0.444 s
+Total time with refinement: 2400.444s
+CCM: 0.0
+Partition 0 is not contiguous. It has 2 connected components.
+Partition 1 is not contiguous. It has 2 connected components.
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 45 connected components.
+Edge Cut: 2748
+ILP Improvment took: 2400 seconds
+New Edge Cut: 1853
+Partition 0 is not contiguous. It has 21 connected components.
+Partition 1 is not contiguous. It has 2 connected components.
+Partition 3 is not contiguous. It has 3 connected components.
+********
+
+KaHIP
+ILP took 2400s
+Edge cut: 1235
+CCM: 0.226
+Percentage of partitions not meeting desired size: 100.0%
+Average percentage by which partitions missed the desired size: 25.1789%
+Block 0 -> 292 and 2 component
+Block 1 -> 257 and 35 component
+Block 2 -> 292 and 1 component
+Block 3 -> 292 and 1 component
+
+KaMinPar
+Edge cut:         1258
+Cardinality Compliance Metric (CCM): 0.259488
+Percentage of partitions not meeting desired size: 100.0%
+Average percentage by which partitions missed the desired size: 28.385932%
+Block 0 -> 290 and 1 component 
+Block 1 -> 285 and 1 component 
+Block 2 -> 283 and 1 component 
+Block 3 -> 275 and 2 component 
+Run time: 0.524 seconds
+
+	Results #2
+total_time_coarsening = 342
+total_time_initial partitioning = 2268
+total_time_uncoarsening = 268
+total_time= 2.878
+Edge Cut: 2625
+CCM: 0.00529567519858782
+Partition 0 is not contiguous. It has 3 connected components.
+Partition 2 is not contiguous. It has 4 connected components.
+Partition 3 is not contiguous. It has 8 connected components.
+
+ILP Improvment took:2402.878
+edge cut: 2218
+CCM: 0.0
+Partition 0 is not contiguous. It has 16 connected components.
+Partition 1 is not contiguous. It has 8 connected components.
+Partition 2 is not contiguous. It has 9 connected components.
+Partition 3 is not contiguous. It has 4 connected components.
+
+
+
+
+
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #3: email.graph
+k = 4
+Partition sizes will be set to Symmetric  Skewness [283, 283, 283, 284]
+###############################################################################
+	Results #1
+total_time_coarsening = 383
+total_time_initial partitioning = 2548
+total_time_uncoarsening = 165
+total_time= 3.096
+Edge Cut: 2510
+CCM: 0.0
+Partition 0 is not contiguous. It has 2 connected components.
+Partition 2 is not contiguous. It has 5 connected components.
+Partition 3 is not contiguous. It has 33 connected components.
+
+ILP Improvment took: 2403.096 s (Time limit)
+The new edge cut: 1730
+Partition 0 is not contiguous. It has 2 connected components.
+Partition 1 is not contiguous. It has 7 connected components.
+Partition 2 is not contiguous. It has 2 connected components.
+Partition 3 is not contiguous. It has 9 connected components.
+
+******
+******
+PRRP without merge and split phases
+total_time_coarsening = 361
+total_time_initial partitioning = 36
+total_time_uncoarsening = 21
+Total Time without refinement : 0.418 s
+Total time with refinement: 2400.405 s
+CCM: 0.0
+Partition 1 is not contiguous. It has 2 connected components.
+Partition 3 is not contiguous. It has 46 connected components.
+Edge Cut: 2722
+ILP Improvment took: 2400
+New Edge Cut:  1912
+********
+
+KaHIP
+ILP took 2400s
+Partitioning 2.23
+Edge cut: 1235
+Cardinality Compliance Metric (CCM): 0.0458959
+Percentage of partitions not meeting desired size: 75.000000%
+Average percentage by which partitions missed the desired size: 4.59115%
+Block 0 -> 292 and 2 component
+Block 1 -> 257 and 35 component
+Block 2 -> 292 and 1 component
+Block 3 -> 292 and 1 component
+
+KaMinPar
+Edge cut:         1258
+Cardinality Compliance Metric (CCM): 0.014122
+Percentage of partitions not meeting desired size: 75.000000%
+Average percentage by which partitions missed the desired size: 1.882082%
+Block 0 -> 290 and 1 component 
+Block 1 -> 285 and 1 component 
+Block 2 -> 283 and 1 component 
+Block 3 -> 275 and 2 component 
+Run time: 0.259 seconds
+
+
+
+##############################################################################
+Cardinality Skewness experiment:
+Graph #3: email.graph
+k = 4
+Partition sizes will be set to Negative Skewness [448, 313, 219, 153]
+###############################################################################
+
+	Results #1
+total_time_coarsening = 373
+total_time_initial partitioning = 2449
+total_time_uncoarsening = 56
+total_time= 2.878
+Edge Cut: 2301
+CCM: 0.0
+Partition 0 is not contiguous. It has 57 connected components.
+
+ILP Improvment took: 2402.878 s (Time limit)
+The new edge cut: 1478
+CCM: 0.0
+Partition 0 is not contiguous. It has 3 connected components.
+Partition 1 is not contiguous. It has 3 connected components.
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 88 connected components.
+
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 384
+total_time_initial partitioning = 806
+total_time_uncoarsening = 17
+Total Time without refinement : 1.207 s
+Total time with refinement: 2401.207 s
+CCM: 0.0
+Partition 1 is not contiguous. It has 5 connected components.
+Partition 2 is not contiguous. It has 34 connected components.
+Partition 3 is not contiguous. It has 84 connected components.
+Edge Cut: 2573
+ILP Improvment took: 2400
+New Edge Cut:  1801
+********
+
+KaMinPar
+Edge cut:         1258
+Cardinality Compliance Metric (CCM): 0.340688
+Percentage of partitions not meeting desired size: 100.000000%
+Average percentage by which partitions missed the desired size: 40.222326%
+Block 0 -> 290 and 1 component 
+Block 1 -> 285 and 1 component 
+Block 2 -> 283 and 1 component 
+Block 3 -> 275 and 2 component 
+Run time: 0.259 seconds
+
+KaHIP
+ILP took 2400s
+Edge cut: 1235
+Cardinality Compliance Metric (CCM): 0.374
+Percentage of partitions not meeting desired size: 100.000000%
+Average percentage by which partitions missed the desired size: 44.224%
+Block 0 -> 292 and 2 component
+Block 1 -> 257 and 35 component
+Block 2 -> 292 and 1 component
+Block 3 -> 292 and 1 component
+##############################################################################
+Cardinality Skewness experiment:
+Graph #3: email.graph
+k = 4
+Partition sizes will be set to Highly Negative Skewness [799, 240, 72, 22]
+###############################################################################
+
+	Results #1
+total_time_coarsening = 347
+total_time_initial partitioning = 2070
+total_time_uncoarsening = 42
+Edge Cut: 1468
+CCM: 0.0
+Partition 0 is not contiguous. It has 8 connected components.
+
+ILP Improvment took: 0 s (Time limit)
+The new edge cut: 1468
+CCM: 0.0
+Partition 3 is not contiguous. It has 8 connected components.
+
+
+******
+PRRP without merge and split phases
+total_time_coarsening = 313
+total_time_initial partitioning = 756
+total_time_uncoarsening = 28
+Total Time without refinement : 1.097 s
+Total time with refinement: 2400.392 s
+CCM: 0.0
+Partition 3 is not contiguous. It has 15 connected components.
+Edge Cut: 1752
+ILP Improvment took: 0
+New Edge Cut:  1752
+
+Partition 3 is not contiguous. It has 2 connected components.
+********
+
+
+	Results #2
+total_time_coarsening = 326
+total_time_initial partitioning = 1604
+total_time_uncoarsening = 42
+total_time= 1.972
+Edge Cut: 1690
+CCM: 0.0
+Partition 3 is not contiguous. It has 6 connected components.
+
+ILP Improvment took: 0 s (Time limit)
+The new edge cut: 1690
+CCM: 0.0
+
+Partition 3 is not contiguous. It has 6 connected components.
+******
+PRRP without merge and split phases
+total_time_coarsening = 359
+total_time_initial partitioning = 808
+total_time_uncoarsening = 18
+Total Time without refinement : 0.844 s
+Total time with refinement: 0 s
+CCM: 0.0
+Partition 3 is not contiguous. It has 15 connected components.
+Edge Cut: 1752
+ILP Improvment took: 0
+New Edge Cut:  1752
+
+Partition 0 is not contiguous. It has 2 connected components.
+Partition 1 is not contiguous. It has 2 connected components.
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 24 connected components.
+********
+
+KaMinPar
+Edge cut:         1258
+Cardinality Compliance Metric (CCM): 0.910856
+Percentage of partitions not meeting desired size: 100.000000%
+Average percentage by which partitions missed the desired size: 395.864247%
+Block 0 -> 290 and 1 component 
+Block 1 -> 285 and 1 component 
+Block 2 -> 283 and 1 component 
+Block 3 -> 275 and 2 component 
+Run time: 0.150 seconds
+
+KaHIP
+ILP took 2400s
+Edge cut: 1235
+Cardinality Compliance Metric (CCM): 0.894969
+Percentage of partitions not meeting desired size: 100.0%
+Average percentage by which partitions missed the desired size: 400.841%
+Block 0 -> 292 and 2 component
+Block 1 -> 257 and 35 component
+Block 2 -> 292 and 1 component
+Block 3 -> 292 and 1 component
