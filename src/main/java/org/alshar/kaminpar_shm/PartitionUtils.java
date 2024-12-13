@@ -53,6 +53,7 @@ public class PartitionUtils {
         twowayPCtx.absoluteEpsilon = kwayPCtx.absoluteEpsilon;
         twowayPCtx.resetBlockWeightFlags();
         twowayPCtx.combinedBlockWeights = kwayPCtx.combinedBlockWeights;
+        twowayPCtx.combinedBlockWeightsRoot = kwayPCtx.cloneTree(kwayPCtx.combinedBlockWeightsRoot);
         twowayPCtx.blockWeights.setup(twowayPCtx, k1.value + k2.value, twowayPCtx.blockConstraints);
         return twowayPCtx;
     }

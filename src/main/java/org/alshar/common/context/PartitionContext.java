@@ -20,6 +20,7 @@ public class PartitionContext {
     // Queue for user-defined block weight constraints
     public Map<BlockWeight, Boolean> blockConstraints = new LinkedHashMap<>();
     public List<List<BlockWeight>> combinedBlockWeights = new ArrayList<>();
+    public TreeNode combinedBlockWeightsRoot;
     public int absoluteEpsilon;
 
 
@@ -41,6 +42,8 @@ public class PartitionContext {
         this.blockWeights = new BlockWeightsContext(other.blockWeights);
         this.blockConstraints = new LinkedHashMap<>(other.blockConstraints);
         this.combinedBlockWeights = new ArrayList<>(other.combinedBlockWeights);
+        this.combinedBlockWeightsRoot = other.combinedBlockWeightsRoot != null
+                ? cloneTree(other.combinedBlockWeightsRoot) : null;
     }
 
     public void setup(Graph graph) {
@@ -60,5 +63,19 @@ public class PartitionContext {
             entry.setValue(false);  // Reset each flag to false
         }
     }
+    // Helper to clone a TreeNode
+    public TreeNode cloneTree(TreeNode node) {
+        if (node == null) return null;
+        TreeNode clone = new TreeNode(node.getLabel());
+        for (TreeNode child : node.getChildren()) {
+            clone.addChild(cloneTree(child));
+        }
+        return clone;
+    }
+    public void initializeCombinedBlockWeightsTree() {
+        // Initialize the root node with a label of 0 and an empty children list
+        combinedBlockWeightsRoot = new TreeNode(0);
+    }
+
 
 }

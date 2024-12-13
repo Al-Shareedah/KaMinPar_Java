@@ -1,6 +1,7 @@
 package org.alshar.common.context;
 
 import org.alshar.common.datastructures.BlockWeight;
+import org.alshar.common.datastructures.TreeNode;
 import org.alshar.kaminpar_shm.PartitionUtils;
 import org.alshar.kaminpar_shm.kaminpar;
 
@@ -127,6 +128,7 @@ public class BlockWeightsContext {
         pCtx.combinedBlockWeights.clear();  // Clear any previous combined blocks
         pCtx.combinedBlockWeights.add(new ArrayList<>());  // For partition 1
         pCtx.combinedBlockWeights.add(new ArrayList<>());  // For partition 2
+        pCtx.initializeCombinedBlockWeightsTree();
         ForkJoinPool forkJoinPool = new ForkJoinPool();
 
         try {
@@ -150,6 +152,7 @@ public class BlockWeightsContext {
                     // Loop for two-way partitioning (two sizes)
                     for (int b = 0; b < 2; b++) {
                         BlockWeight mergedBlockWeight = new BlockWeight(0);
+                        TreeNode partitionNode = new TreeNode(0); // Node to represent this partition
                         List<BlockWeight> combinedBlocksForThisPartition = new ArrayList<>();
 
                         // Randomly select blocks to add until the partition reaches the desired size
@@ -160,6 +163,10 @@ public class BlockWeightsContext {
                             BlockWeight selectedBlockWeight = availableBlockWeights.remove(randomIndex);
 
                             mergedBlockWeight.value += selectedBlockWeight.value;
+
+                            // Create a TreeNode for the selected block weight and add it as a child of the partition node
+                            TreeNode blockNode = new TreeNode(selectedBlockWeight.value);
+                            partitionNode.addChild(blockNode);
                             combinedBlocksForThisPartition.add(selectedBlockWeight);  // Track which blocks were combined
                             remainingNodes -= selectedBlockWeight.value;
 
@@ -170,6 +177,12 @@ public class BlockWeightsContext {
                         // Set the merged block weight for this partition
                         perfectlyBalancedBlockWeights.set(b, mergedBlockWeight);
                         pCtx.combinedBlockWeights.set(b, combinedBlocksForThisPartition);  // Store combined blocks in PartitionContext
+
+                        // Update the partition node label with the total weight
+                        partitionNode.setLabel(mergedBlockWeight.value);
+
+                        // Add the partition node as a child of the combinedBlockWeightsRoot
+                        pCtx.combinedBlockWeightsRoot.addChild(partitionNode);
 
                         // Calculate the max block weight for this partition
                         long maxBlockWeight = mergedBlockWeight.value + pCtx.absoluteEpsilon;
@@ -266,122 +279,167 @@ public class BlockWeightsContext {
         maxBlockWeights = new ArrayList<>(Collections.nCopies(pCtx.k.value, new BlockWeight(0)));
         perfectlyBalancedBlockWeights = new ArrayList<>(Collections.nCopies(pCtx.k.value, new BlockWeight(0)));
 
-        ForkJoinPool forkJoinPool = new ForkJoinPool();
+        long totalNodeWeight = pCtx.totalNodeWeight.value;  // The total weight we need to partition
+        long remainingNodes = totalNodeWeight;
 
-        try {
-            forkJoinPool.invoke(new RecursiveAction() {
-                @Override
-                protected void compute() {
-                    long totalNodeWeight = pCtx.n.value;  // The total weight we need to partition
-                    long remainingNodes = totalNodeWeight;
+        // Collect block weights that haven't been used yet
+        List<TreeNode> availableNodes = new ArrayList<>();
+        flattenTree(pCtx.combinedBlockWeightsRoot, availableNodes);
 
-                    // Collect block weights that haven't been used yet and load them into availableWeights
-                    List<BlockWeight> availableWeights = new ArrayList<>();
-                    for (Map.Entry<BlockWeight, Boolean> entry : blockWeightMap.entrySet()) {
-                        if (!entry.getValue()) {
-                            availableWeights.add(entry.getKey());
-                        }
-                    }
+        // Sort available nodes in descending order by their labels (values)
+        availableNodes.sort(Comparator.comparingLong(TreeNode::getLabel).reversed());
 
-                    // Sort available weights in descending order for easier combination finding
-                    availableWeights.sort(Comparator.comparingLong(bw -> -bw.value));
-
-                    // Check combinedBlockWeights before attempting to recombine blocks
-                    List<BlockWeight> selectedWeights = new ArrayList<>();
-                    for (List<BlockWeight> combinedBlockList : pCtx.combinedBlockWeights) {
-                        long combinedSum = combinedBlockList.stream().mapToLong(bw -> bw.value).sum();
-                        if (combinedSum == totalNodeWeight) {
-                            selectedWeights.addAll(combinedBlockList);
-                            combinedBlockList.forEach(bw -> blockWeightMap.put(bw, true));  // Mark as used
-                            remainingNodes = 0;
-                            break;
-                        }
-                    }
-
-                    // If remainingNodes are greater than 0, select from availableWeights or combine again
-                    if (remainingNodes > 0) {
-                        List<BlockWeight> combinedBlocks = new ArrayList<>();
-                        for (BlockWeight bw : availableWeights) {
-                            if (remainingNodes >= bw.value) {
-                                selectedWeights.add(bw);
-                                combinedBlocks.add(bw);
-                                remainingNodes -= bw.value;
-                                blockWeightMap.put(bw, true);  // Mark it as used
-                            }
-
-                            if (remainingNodes == 0) {
-                                break;
-                            }
-                        }
-
-                        // If combination occurred, add the combined blocks to combinedBlockWeights
-                        if (!combinedBlocks.isEmpty()) {
-                            pCtx.combinedBlockWeights.add(combinedBlocks);
-                        }
-                    }
-
-                    // If the exact combination of weights wasn't found, revert to the fallback method
-                    if (remainingNodes != 0 || selectedWeights.size() < pCtx.k.value) {
-                        // Revert to basic perfectly balanced block weight calculation
-                        double blockWeight = 1.0 * pCtx.totalNodeWeight.value / inputK;
-
-                        for (int b = 0; b < pCtx.k.value; b++) {
-                            int finalK = PartitionUtils.computeFinalK(b, pCtx.k.value, inputK);
-                            perfectlyBalancedBlockWeights.set(b, new BlockWeight((long) Math.ceil(finalK * blockWeight)));
-                            long maxBlockWeight = perfectlyBalancedBlockWeights.get(b).value + pCtx.absoluteEpsilon;
-                            maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
-                        }
-                        return;  // Exit after reverting to fallback method
-                    }
-
-                    // Divide the selected weights into perfectlyBalancedBlockWeights if no fallback
-                    int blocksToAllocate = selectedWeights.size();
-                    if (blocksToAllocate == pCtx.k.value) {
-                        // Exact match, allocate directly
-                        for (int b = 0; b < blocksToAllocate; b++) {
-                            BlockWeight selectedBlockWeight = selectedWeights.get(b);
-                            perfectlyBalancedBlockWeights.set(b, selectedBlockWeight);
-
-                            // Calculate max block weight
-                            long maxBlockWeight = selectedBlockWeight.value + pCtx.absoluteEpsilon;
-                            maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
-                        }
-                    } else {
-                        // Need to combine again and allocate
-                        List<BlockWeight> combinedBlocks = new ArrayList<>();
-                        for (int b = 0; b < pCtx.k.value; b++) {
-                            BlockWeight mergedBlockWeight = new BlockWeight(0);
-
-                            // Combine blocks if needed
-                            while (mergedBlockWeight.value < totalNodeWeight / (pCtx.k.value - b) && !selectedWeights.isEmpty()) {
-                                BlockWeight smallest = selectedWeights.remove(0);  // Get the smallest available weight
-                                mergedBlockWeight.value += smallest.value;
-                                combinedBlocks.add(smallest);
-                            }
-
-                            // Set the merged block weight
-                            perfectlyBalancedBlockWeights.set(b, mergedBlockWeight);
-
-                            // Calculate max block weight
-                            long maxBlockWeight = mergedBlockWeight.value + pCtx.absoluteEpsilon;
-                            maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
-
-                            // Add combined blocks to combinedBlockWeights
-                            pCtx.combinedBlockWeights.add(combinedBlocks);
-                        }
-                    }
-                }
-            });
-        } finally {
-            forkJoinPool.shutdown();
-            try {
-                if (!forkJoinPool.awaitTermination(60, TimeUnit.SECONDS)) {
-                    forkJoinPool.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                forkJoinPool.shutdownNow();
-                Thread.currentThread().interrupt();
+        // Check combinedBlockWeightsRoot before attempting to recombine blocks
+        List<TreeNode> selectedNodes = new ArrayList<>();
+        for (TreeNode child : pCtx.combinedBlockWeightsRoot.getChildren()) {
+            long combinedSum = child.getChildren().stream().mapToLong(TreeNode::getLabel).sum();
+            if (combinedSum == totalNodeWeight) {
+                selectedNodes.addAll(child.getChildren());
+                markNodesAsUsed(child, blockWeightMap);  // Mark as used
+                remainingNodes = 0;
+                break;
             }
+        }
+
+        // If remainingNodes are greater than 0, select from availableNodes or combine again
+        if (remainingNodes > 0) {
+            List<TreeNode> combinedNodes = new ArrayList<>();
+            for (TreeNode node : availableNodes) {
+                if (remainingNodes >= node.getLabel()) {
+                    selectedNodes.add(node);
+                    combinedNodes.add(node);
+                    remainingNodes -= node.getLabel();
+                    blockWeightMap.put(new BlockWeight(node.getLabel()), true);  // Mark it as used
+                }
+
+                if (remainingNodes == 0) {
+                    if (!combinedNodes.isEmpty()) {
+                        TreeNode combinedNode = new TreeNode(combinedNodes.stream().mapToLong(TreeNode::getLabel).sum());
+                        combinedNodes.forEach(combinedNode::addChild);
+                        pCtx.combinedBlockWeightsRoot.addChild(combinedNode);
+                    }
+                    break;
+                }
+            }
+
+        }
+
+        // Divide the selected nodes into perfectlyBalancedBlockWeights if no fallback
+        // Combine selectedNodes values until we get the same number of nodes as pCtx.k.value
+        if (remainingNodes == 0 && selectedNodes.size() > pCtx.k.value) {
+            List<TreeNode> nodeList = new ArrayList<>(selectedNodes);
+            List<TreeNode> finalNodes = new ArrayList<>();
+
+            while (nodeList.size() + finalNodes.size() > pCtx.k.value) {
+                // Separate leaf nodes from combined nodes
+                List<TreeNode> leafNodes = new ArrayList<>();
+                List<TreeNode> combinedNodes = new ArrayList<>();
+                for (TreeNode node : nodeList) {
+                    if (node.getChildren().isEmpty()) {
+                        leafNodes.add(node);
+                    } else {
+                        combinedNodes.add(node);
+                    }
+                }
+
+                // Prioritize combining two leaf nodes if possible
+                TreeNode firstNode, secondNode;
+                if (leafNodes.size() >= 2) {
+                    // Sort leaf nodes and combine the most balanced pair
+                    leafNodes.sort(Comparator.comparingLong(TreeNode::getLabel));
+                    firstNode = leafNodes.remove(0); // Smallest node
+                    secondNode = leafNodes.remove(leafNodes.size() - 1); // Largest node
+                } else if (leafNodes.size() == 1) {
+                    // Combine the single leaf node with the combined node closest in value
+                    TreeNode leafNode = leafNodes.remove(0);
+                    combinedNodes.sort(Comparator.comparingLong(TreeNode::getLabel));
+                    firstNode = leafNode;
+                    secondNode = combinedNodes.remove(combinedNodes.size() - 1); // Closest larger node
+                } else {
+                    // Combine the two most balanced combined nodes
+                    combinedNodes.sort(Comparator.comparingLong(TreeNode::getLabel));
+                    firstNode = combinedNodes.remove(0); // Smallest node
+                    secondNode = combinedNodes.remove(combinedNodes.size() - 1); // Largest node
+                }
+
+                // Combine the selected nodes
+                long combinedValue = firstNode.getLabel() + secondNode.getLabel();
+                TreeNode combinedNode = new TreeNode(combinedValue);
+                combinedNode.addChild(firstNode);
+                combinedNode.addChild(secondNode);
+
+                // Find the parent node of the two nodes (if they have one)
+                TreeNode parentNode = findParentNode(pCtx.combinedBlockWeightsRoot, firstNode, secondNode);
+                if (parentNode == null) {
+                    throw new IllegalStateException("Parent node for the selected nodes not found.");
+                }
+
+                // Remove the two nodes from the parent
+                parentNode.getChildren().remove(firstNode);
+                parentNode.getChildren().remove(secondNode);
+
+                // Add the new combined node as a child of the parent
+                parentNode.addChild(combinedNode);
+
+                // Update nodeList for the next iteration
+                nodeList.clear();
+                nodeList.addAll(leafNodes);
+                nodeList.addAll(combinedNodes);
+                nodeList.add(combinedNode);
+            }
+
+
+            // Remaining nodes in the list are the final partitions
+            finalNodes.addAll(nodeList);
+
+            // Allocate final nodes to perfectlyBalancedBlockWeights
+            for (int b = 0; b < pCtx.k.value; b++) {
+                TreeNode finalNode = finalNodes.get(b);
+                perfectlyBalancedBlockWeights.set(b, new BlockWeight(finalNode.getLabel()));
+
+                // Calculate max block weight
+                long maxBlockWeight = finalNode.getLabel() + pCtx.absoluteEpsilon;
+                maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
+            }
+        } else if (remainingNodes == 0 && selectedNodes.size() == pCtx.k.value) {
+            // Exact match, allocate directly
+            for (int b = 0; b < pCtx.k.value; b++) {
+                TreeNode selectedNode = selectedNodes.get(b);
+                perfectlyBalancedBlockWeights.set(b, new BlockWeight(selectedNode.getLabel()));
+
+                // Calculate max block weight
+                long maxBlockWeight = selectedNode.getLabel() + pCtx.absoluteEpsilon;
+                maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
+            }
+        } else {
+            // Fallback to evenly splitting the weights
+            double blockWeight = 1.0 * totalNodeWeight / inputK;
+            for (int b = 0; b < pCtx.k.value; b++) {
+                int finalK = PartitionUtils.computeFinalK(b, pCtx.k.value, inputK);
+                perfectlyBalancedBlockWeights.set(b, new BlockWeight((long) Math.ceil(finalK * blockWeight)));
+                long maxBlockWeight = perfectlyBalancedBlockWeights.get(b).value + pCtx.absoluteEpsilon;
+                maxBlockWeights.set(b, new BlockWeight(maxBlockWeight));
+            }
+        }
+    }
+
+
+    // Helper method to flatten the tree into a list of leaf nodes
+    private void flattenTree(TreeNode node, List<TreeNode> flattenedList) {
+        if (node == null) return;
+        if (node.getChildren().isEmpty()) {
+            flattenedList.add(node);
+        } else {
+            for (TreeNode child : node.getChildren()) {
+                flattenTree(child, flattenedList);
+            }
+        }
+    }
+
+    // Helper method to mark nodes as used in the blockWeightMap
+    private void markNodesAsUsed(TreeNode node, Map<BlockWeight, Boolean> blockWeightMap) {
+        for (TreeNode child : node.getChildren()) {
+            blockWeightMap.put(new BlockWeight(child.getLabel()), true);
         }
     }
 
@@ -392,6 +450,38 @@ public class BlockWeightsContext {
 
 
 
+    // Helper method to find a node by its label in the tree
+    private TreeNode findNodeByLabel(TreeNode root, long label) {
+        if (root == null) return null;
+        if (root.getLabel() == label) return root;
+
+        for (TreeNode child : root.getChildren()) {
+            TreeNode result = findNodeByLabel(child, label);
+            if (result != null) return result;
+        }
+        return null;
+    }
+    // Helper method to find the parent node of two children
+    private TreeNode findParentNode(TreeNode root, TreeNode node1, TreeNode node2) {
+        if (root == null || root.getChildren().isEmpty()) {
+            return null;
+        }
+
+        boolean containsNode1 = root.getChildren().contains(node1);
+        boolean containsNode2 = root.getChildren().contains(node2);
+
+        if (containsNode1 && containsNode2) {
+            return root; // Found the parent
+        }
+
+        for (TreeNode child : root.getChildren()) {
+            TreeNode result = findParentNode(child, node1, node2);
+            if (result != null) {
+                return result;
+            }
+        }
+        return null;
+    }
     public BlockWeight max(int b) {
         return maxBlockWeights.get(b);
     }

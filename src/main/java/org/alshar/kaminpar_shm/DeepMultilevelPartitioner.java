@@ -152,12 +152,20 @@ public class DeepMultilevelPartitioner extends Partitioner {
             List<BlockWeight> newPerfectlyBalancedWeights = new ArrayList<>();
             List<BlockWeight> newMaxBlockWeights = new ArrayList<>();
 
+            // Maintain a set of used weights to avoid reuse
+            Set<BlockWeight> usedWeights = new HashSet<>();
+
             // Maintain the order of currentPCtx while finding the closest weights from inputCtx
             for (BlockWeight currentWeight : currentPCtx.blockWeights.perfectlyBalancedBlockWeights) {
                 BlockWeight closestWeight = null;
                 long minDifference = Long.MAX_VALUE;
 
                 for (BlockWeight inputWeight : inputCtx.partition.blockWeights.perfectlyBalancedBlockWeights) {
+                    // Skip already used weights
+                    if (usedWeights.contains(inputWeight)) {
+                        continue;
+                    }
+
                     long difference = Math.abs(inputWeight.value - currentWeight.value);
                     if (difference < minDifference) {
                         minDifference = difference;
@@ -165,10 +173,11 @@ public class DeepMultilevelPartitioner extends Partitioner {
                     }
                 }
 
-                // Add the matched weight to the new lists
+                // Add the matched weight to the new lists and mark it as used
                 if (closestWeight != null) {
                     newPerfectlyBalancedWeights.add(closestWeight);
                     newMaxBlockWeights.add(new BlockWeight(closestWeight.value + inputCtx.partition.absoluteEpsilon));
+                    usedWeights.add(closestWeight); // Mark this weight as used
                 }
             }
 
@@ -177,6 +186,7 @@ public class DeepMultilevelPartitioner extends Partitioner {
             currentPCtx.blockWeights.perfectlyBalancedBlockWeights = newPerfectlyBalancedWeights;
             currentPCtx.blockWeights.maxBlockWeights = newMaxBlockWeights;
         }
+
 
 
 

@@ -71,6 +71,7 @@ public class Helper {
 
         InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx, finalK, ipMCtxPool.local().get(),true );
         inputCtx.partition.combinedBlockWeights = partitioner.p_ctx.combinedBlockWeights;
+        inputCtx.partition.combinedBlockWeightsRoot = partitioner.p_ctx.cloneTree(partitioner.p_ctx.combinedBlockWeightsRoot);
         // Perform the partitioning
         PartitionedGraph pGraph = partitioner.partition();
 
@@ -85,6 +86,8 @@ public class Helper {
 
         // Call the modified InitialPartitioner constructor
         InitialPartitioner partitioner = new InitialPartitioner(graph, inputCtx, finalK, ipMCtxPool.local().get());
+        inputCtx.partition.combinedBlockWeights = partitioner.p_ctx.combinedBlockWeights;
+        inputCtx.partition.combinedBlockWeightsRoot = partitioner.p_ctx.cloneTree(partitioner.p_ctx.combinedBlockWeightsRoot);
         PartitionedGraph pGraph = partitioner.partitionRecursive();
         ipMCtxPool.local().put(partitioner.free());
 

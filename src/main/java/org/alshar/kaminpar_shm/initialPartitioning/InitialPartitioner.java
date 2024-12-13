@@ -14,7 +14,9 @@ import org.alshar.kaminpar_shm.PartitionedGraph;
 import org.alshar.common.Logger;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class InitialPartitioner {
     // Separate MemoryContext structure
@@ -107,35 +109,66 @@ public class InitialPartitioner {
     }
 
     private void configurePartitionContext(Graph cGraph) {
-        BlockWeight totalNodeWeight = new BlockWeight(cGraph.totalNodeWeight().value);
+        long target = cGraph.totalNodeWeight().value;
         List<List<BlockWeight>> combinedBlockWeights = p_ctx.combinedBlockWeights;
 
-        List<BlockWeight> bestMatch = null;
-        long closestDifference = Long.MAX_VALUE;
+        // Flatten all block weights into a single list to simplify pair-searching.
+        // Keep track of their original positions if needed, but here we only need the values.
+        List<BlockWeight> allWeights = new ArrayList<>();
+        for (List<BlockWeight> list : combinedBlockWeights) {
+            allWeights.addAll(list);
+        }
 
-        // Find the combination with the total closest to totalNodeWeight
-        for (List<BlockWeight> blockWeights : combinedBlockWeights) {
-            long total = blockWeights.stream().mapToLong(BlockWeight::getValue).sum();
-            long difference = Math.abs(totalNodeWeight.value - total);
-            if (difference < closestDifference) {
-                closestDifference = difference;
-                bestMatch = blockWeights;
+        // If we must ensure two weights, but we have fewer than 2 total weights, throw an error
+        if (allWeights.size() < 2) {
+            throw new IllegalStateException("Not enough block weights to find a pair.");
+        }
+
+        long closestDifference = Long.MAX_VALUE;
+        BlockWeight bestA = null;
+        BlockWeight bestB = null;
+
+        // Use a set to avoid testing the same pair more than once.
+        // We'll store pairs of indices to ensure uniqueness.
+        Set<String> testedPairs = new HashSet<>();
+
+        // Try all unique pairs
+        for (int i = 0; i < allWeights.size(); i++) {
+            for (int j = i + 1; j < allWeights.size(); j++) {
+                // Generate a key for the pair (assuming order doesn't matter, use sorted indices)
+                String pairKey = i + "-" + j;
+                if (testedPairs.contains(pairKey)) {
+                    continue; // skip already tested pair
+                }
+                testedPairs.add(pairKey);
+
+                long sum = allWeights.get(i).value + allWeights.get(j).value;
+                long diff = Math.abs(target - sum);
+
+                if (diff < closestDifference) {
+                    closestDifference = diff;
+                    bestA = allWeights.get(i);
+                    bestB = allWeights.get(j);
+                }
             }
         }
 
-        // Ensure a match is found
-        if (bestMatch == null) {
-            throw new IllegalStateException("No suitable block weight combination found for the given totalNodeWeight.");
+        // Ensure we found a valid pair
+        if (bestA == null || bestB == null) {
+            throw new IllegalStateException("No suitable block weights found to match the total node weight.");
         }
 
-        // Set the perfectly balanced and max block weights
-        p_ctx.blockWeights.perfectlyBalancedBlockWeights = new ArrayList<>(bestMatch);
+        // Set perfectly balanced block weights
+        p_ctx.blockWeights.perfectlyBalancedBlockWeights = new ArrayList<>();
+        p_ctx.blockWeights.perfectlyBalancedBlockWeights.add(new BlockWeight(bestA.value));
+        p_ctx.blockWeights.perfectlyBalancedBlockWeights.add(new BlockWeight(bestB.value));
+
+        // Set max block weights by adding absoluteEpsilon
         p_ctx.blockWeights.maxBlockWeights = new ArrayList<>();
-        for (BlockWeight weight : bestMatch) {
-            BlockWeight maxWeight = new BlockWeight(weight.value + p_ctx.absoluteEpsilon);
-            p_ctx.blockWeights.maxBlockWeights.add(maxWeight);
-        }
+        p_ctx.blockWeights.maxBlockWeights.add(new BlockWeight(bestA.value + p_ctx.absoluteEpsilon));
+        p_ctx.blockWeights.maxBlockWeights.add(new BlockWeight(bestB.value + p_ctx.absoluteEpsilon));
     }
+
     private Graph coarsen() {
         CoarseningContext cCtx = new CoarseningContext();
         cCtx.contractionLimit = i_ctx.coarsening.contractionLimit;

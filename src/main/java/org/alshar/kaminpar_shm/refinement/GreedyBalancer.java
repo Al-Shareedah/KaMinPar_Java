@@ -149,6 +149,11 @@ public class GreedyBalancer extends Refiner {
         if (newOverload.value != 0) {
             initPQ();
             forcefullyResolveOverload(pGraph, pCtx);
+            initialUnderload = Metrics.totalUnderload(pGraph, pCtx);
+            if(initialUnderload.value == 0){
+                return true; // No overload and no underload mean no refinement needed
+            }
+            forcefullyResolveUnderload(pGraph, pCtx);
         }
 
         // Print debug information if necessary
@@ -305,24 +310,6 @@ public class GreedyBalancer extends Refiner {
                     hasOverload = true; // Set the flag to true to indicate there is still overload
                     List<BlockID> targetBlocks = findUnderloadedBlocks(pGraph, pCtx, fromBlock);
 
-                    // If there are no underloaded blocks, look for blocks that can accept nodes while maintaining valid weights
-                    if (targetBlocks.isEmpty()) {
-                        targetBlocks = new ArrayList<>();
-
-                        for (BlockID blockID : pGraph.blocks()) {
-                            if (!blockID.equals(fromBlock)) {
-                                long blockWeight = pGraph.blockWeight(blockID).value;
-                                long minBlockWeight = pCtx.blockWeights.perfectlyBalanced(blockID.value).value - pCtx.absoluteEpsilon;
-                                long maxBlockWeight = pCtx.blockWeights.perfectlyBalanced(blockID.value).value + pCtx.absoluteEpsilon;
-
-                                // Check if the block weight is within the valid range
-                                if (blockWeight >= minBlockWeight && blockWeight <= maxBlockWeight) {
-                                    targetBlocks.add(blockID);
-                                }
-                            }
-                        }
-                    }
-
                     // If there are no underloaded blocks, skip this block
                     if (targetBlocks.isEmpty()) {
                         continue; // No targets to move to
@@ -334,7 +321,7 @@ public class GreedyBalancer extends Refiner {
                         // Forcefully move the node to the best possible underloaded block
                         boolean moved = false;
                         for (BlockID toBlock : targetBlocks) {
-                            if (CanAcceptNodes(pGraph, pCtx, toBlock) && moveNodeForcefully(u, fromBlock)) {
+                            if (isUnderloaded(pGraph, pCtx, toBlock) && moveNodeForcefully(u, fromBlock)) {
                                 NodeWeight uWeight = pGraph.nodeWeight(u);
                                 BlockWeight delta = new BlockWeight(Math.min(currentOverload.value, uWeight.value));
                                 currentOverload = new BlockWeight(currentOverload.value - delta.value);
