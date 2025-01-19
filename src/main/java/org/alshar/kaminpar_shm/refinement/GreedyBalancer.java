@@ -124,7 +124,6 @@ public class GreedyBalancer extends Refiner {
         // Calculate the initial underload
         NodeWeight initialUnderload = Metrics.totalUnderload(pGraph, pCtx);
 
-
         if (initialOverload.value == 0 ) {
             if(initialUnderload.value == 0){
                 return true; // No overload and no underload mean no refinement needed
@@ -132,7 +131,6 @@ public class GreedyBalancer extends Refiner {
             forcefullyResolveUnderload(pGraph, pCtx);
             return true;
         }
-
 
         // Calculate the initial edge cut (only for debugging)
         EdgeWeight initialCut = DEBUG ? Metrics.edgeCut(pGraph) : null;
@@ -150,10 +148,10 @@ public class GreedyBalancer extends Refiner {
             initPQ();
             forcefullyResolveOverload(pGraph, pCtx);
             initialUnderload = Metrics.totalUnderload(pGraph, pCtx);
-            if(initialUnderload.value == 0){
-                return true; // No overload and no underload mean no refinement needed
+            if(initialUnderload.value != 0){
+                forcefullyResolveUnderload(pGraph, pCtx);
             }
-            forcefullyResolveUnderload(pGraph, pCtx);
+
         }
 
         // Print debug information if necessary
@@ -366,9 +364,9 @@ public class GreedyBalancer extends Refiner {
                     if (!fromBlock.equals(toBlock)) {
                         long fromBlockWeight = pGraph.blockWeight(fromBlock).value;
                         long maxBlockWeight = pCtx.blockWeights.perfectlyBalanced(fromBlock.value).value + pCtx.absoluteEpsilon;
-
+                        long minWeight = pCtx.blockWeights.perfectlyBalanced(fromBlock.value).value - pCtx.absoluteEpsilon;
                         // Ensure the source block is neither underloaded nor overloaded after transfer
-                        if (fromBlockWeight > minBlockWeight && fromBlockWeight <= maxBlockWeight) {
+                        if (fromBlockWeight > minWeight && fromBlockWeight <= maxBlockWeight) {
                             sourceBlocks.add(fromBlock);
                         }
                     }
@@ -419,16 +417,12 @@ public class GreedyBalancer extends Refiner {
             }
         }
     }
-
-
     private boolean moveNodeForcefully2(NodeID u, BlockID fromBlock, BlockID toBlock) {
         BlockWeight maxToWeight = pCtx.blockWeights.max(toBlock.value);
 
         // Attempt to move the node from `fromBlock` to `toBlock`
         return pGraph.move(u, fromBlock, toBlock, maxToWeight);
     }
-
-
     private BlockWeight blockOverload2(BlockID blockID) {
         long blockWeight = pGraph.blockWeight(blockID).value;
         long maxBlockWeight = pCtx.blockWeights.max(blockID.value).value;
@@ -441,11 +435,9 @@ public class GreedyBalancer extends Refiner {
         for (BlockID blockID : pGraph.blocks()) {
             if (!blockID.equals(fromBlock)) {
                 long blockWeight = pGraph.blockWeight(blockID).value;
-                long minBlockWeight = pCtx.blockWeights.perfectlyBalanced(blockID.value).value - pCtx.absoluteEpsilon;
-
-                // Check if the block weight is below the minimum allowed weight
-                if (blockWeight < minBlockWeight) {
-                    underloadedBlocks.add(blockID); // This block is underloaded and needs more nodes
+                long maxBlockWeight = pCtx.blockWeights.max(blockID.value).value;
+                if (blockWeight < maxBlockWeight) {
+                    underloadedBlocks.add(blockID); // This block can accept more nodes
                 }
             }
         }
@@ -511,7 +503,7 @@ public class GreedyBalancer extends Refiner {
 
         // Try moving the node to any feasible block, even if it results in a higher edge cut
         for (BlockID toBlock : targetBlocks) {
-            if (CanAcceptNodes(pGraph, pCtx, toBlock)) {
+            if (isUnderloaded(pGraph, pCtx, toBlock)) {
                 BlockWeight maxToWeight = pCtx.blockWeights.max(toBlock.value);
 
                 // Use the existing move method to transfer the node
@@ -525,21 +517,10 @@ public class GreedyBalancer extends Refiner {
         return false;
     }
 
+
     private boolean isUnderloaded(PartitionedGraph pGraph, PartitionContext pCtx, BlockID block) {
         long blockWeight = pGraph.blockWeight(block).value;
         long maxBlockWeight = pCtx.blockWeights.max(block.value).value;
-        long perfectlyBalancedWeight = pCtx.blockWeights.perfectlyBalanced(block.value).value;
-        long minBlockWeight = perfectlyBalancedWeight - pCtx.absoluteEpsilon;
-
-        // Check if the block weight is less than the maxBlockWeight but not below the minimum allowed weight
-        return blockWeight < maxBlockWeight && blockWeight >= minBlockWeight;
-    }
-    private boolean CanAcceptNodes(PartitionedGraph pGraph, PartitionContext pCtx, BlockID block) {
-        long blockWeight = pGraph.blockWeight(block).value;
-        long maxBlockWeight = pCtx.blockWeights.max(block.value).value;
-
-
-        // Check if the block weight is less than the maxBlockWeight but not below the minimum allowed weight
         return blockWeight < maxBlockWeight;
     }
 

@@ -302,6 +302,7 @@ public class BlockWeightsContext {
         }
 
         // If remainingNodes are greater than 0, select from availableNodes or combine again
+
         if (remainingNodes > 0) {
             List<TreeNode> combinedNodes = new ArrayList<>();
             for (TreeNode node : availableNodes) {

@@ -57,18 +57,15 @@ public class Presets {
         // Set Partition Context
         ctx.partition = new PartitionContext();
         ctx.partition.epsilon = 0.0;
-        ctx.partition.absoluteEpsilon = 780;
+        ctx.partition.absoluteEpsilon = 1719;
         ctx.partition.k = new BlockID(Integer.MAX_VALUE); // kInvalidBlockID equivalent
 
         // Set block constraints
-        ctx.partition.blockConstraints.put(new BlockWeight(654), false);
-        ctx.partition.blockConstraints.put(new BlockWeight(850), false);
-        ctx.partition.blockConstraints.put(new BlockWeight(1105), false);
-        ctx.partition.blockConstraints.put(new BlockWeight(1437), false);
-        ctx.partition.blockConstraints.put(new BlockWeight(1868), false);
-        ctx.partition.blockConstraints.put(new BlockWeight(2429), false);
-        ctx.partition.blockConstraints.put(new BlockWeight(3157), false);
-        ctx.partition.blockConstraints.put(new BlockWeight(4106), false);
+        ctx.partition.blockConstraints.put(new BlockWeight(1726), false);
+        ctx.partition.blockConstraints.put(new BlockWeight(2244), false);
+        ctx.partition.blockConstraints.put(new BlockWeight(2917), false);
+        ctx.partition.blockConstraints.put(new BlockWeight(3793), false);
+
 
 
 
@@ -87,7 +84,7 @@ public class Presets {
         ctx.coarsening.lp.isolatedNodesStrategy = IsolatedNodesClusteringStrategy.KEEP;
 
         // Additional Coarsening Settings
-        ctx.coarsening.contractionLimit = 20;
+        ctx.coarsening.contractionLimit = 1602;
         ctx.coarsening.enforceContractionLimit = false;
         ctx.coarsening.convergenceThreshold = 0.0;
         ctx.coarsening.clusterWeightLimit = ClusterWeightLimit.EPSILON_BLOCK_WEIGHT;
@@ -98,7 +95,7 @@ public class Presets {
 
         // Initial Coarsening Context within Initial Partitioning
         ctx.initialPartitioning.coarsening = new InitialCoarseningContext();
-        ctx.initialPartitioning.coarsening.contractionLimit = 2341;
+        ctx.initialPartitioning.coarsening.contractionLimit = 20;
         ctx.initialPartitioning.coarsening.convergenceThreshold = 0.05;
         ctx.initialPartitioning.coarsening.largeDegreeThreshold = 1000000;
         ctx.initialPartitioning.coarsening.clusterWeightLimit = ClusterWeightLimit.BLOCK_WEIGHT;
