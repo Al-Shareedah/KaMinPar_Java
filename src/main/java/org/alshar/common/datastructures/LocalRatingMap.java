@@ -77,9 +77,31 @@ public class LocalRatingMap {
                     return 0L;
                 }
             case SMALL:
-                return smallMap.contains(key) ? smallMap.get(key) : 0L;
+                if (smallMap.contains(key)) {
+                    Object value = smallMap.get(key);
+                    if (value instanceof Long) {
+                        return (Long) value;
+                    } else if (value instanceof EdgeWeight) {
+                        return ((EdgeWeight) value).value;
+                    } else {
+                        throw new IllegalStateException("Unexpected value type in smallMap: " + value.getClass());
+                    }
+                } else {
+                    return 0L;
+                }
             case LARGE:
-                return largeMap.exists(key) ? largeMap.get(key) : 0L;
+                if (largeMap.exists(key)) {
+                    Object value = largeMap.get(key);
+                    if (value instanceof Long) {
+                        return (Long) value;
+                    } else if (value instanceof EdgeWeight) {
+                        return ((EdgeWeight) value).value;
+                    } else {
+                        throw new IllegalStateException("Unexpected value type in largeMap: " + value.getClass());
+                    }
+                } else {
+                    return 0L;
+                }
             default:
                 throw new IllegalStateException("Unexpected value: " + mapType);
         }
