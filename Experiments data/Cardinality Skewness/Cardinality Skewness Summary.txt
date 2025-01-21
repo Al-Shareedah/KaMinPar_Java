@@ -1,0 +1,1032 @@
+Cardinality Skewness experiment:
+Graph #2: 4elt.graph
+
+############### High Positive Skewness [12000, 1200, 1200, 1206] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Total Time without Refinement: 25.81 s
+Edge Cut: 653.5
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 2.68 s
+Edge Cut: 10.5
+CCM:0.0 
+
+2. Proposed algorithm(w/PRRP):
+
+Averages:
+
+Total Time with Refinement: 25.81 s
+Edge Cut: 653.5
+
+Standard Deviations:
+
+Total Time with Refinement: 2.68 s
+Edge Cut: 10.5
+
+3. Proposed algorithm without merge and split phases:
+
+Averages:
+
+
+Total Time with Refinement: 10.69 s
+Edge Cut: 1874.0
+CCM: 0.0
+
+Standard Deviations:
+
+
+Total Time with Refinement: 0.21 s
+Edge Cut: 169.15
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+
+Total Time without Refinement: 10.31 s
+Edge Cut: 1874.0
+CCM: 0.0 
+
+
+Standard Deviations:
+Total Time without Refinement: 0.20 s
+Edge Cut: 169.15
+
+
+5. KaHIP
+ILP took 0.15s
+Edge cut: 341
+CCM: 1.04601
+
+
+6. KaMinPar
+Edge cut:         391
+Cardinality Compliance Metric (CCM): 1.033961
+
+Run time: 0.226 seconds
+
+************************************************
+***********************************************
+**********************************************
+
+
+
+
+
+############### Positive Skewness [9000, 2200, 2200, 2206] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Total Time without Refinement: 31.776 s
+Edge Cut: 1108.0
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 2.13 s
+Edge Cut: 73.35
+CCM: 0.0
+
+2. Proposed algorithm(w/PRRP):
+
+Averages:
+
+Total Time with Refinement: 33.453 s
+New Edge Count: 761.0
+CCM: 0.0
+
+Standard Deviations:
+
+Total Time with Refinement: 1.50 s
+New Edge Count: 107.73
+CCM: 0.0
+
+3. Proposed algorithm without merge and split phases:
+
+Averages:
+
+
+Total Time with Refinement: 15.115 s
+Edge Cut: 3133.0
+CCM: 0.0
+
+Standard Deviations:
+
+Total Time with Refinement: 0.34 s
+Edge Cut: 573.59
+
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Total Time without Refinement: 14.595 s
+Edge Cut: 3133.0
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 0.31 s
+Edge Cut: 573.59
+CCM: 0.0
+
+5. KaHIP
+ILP took 0.15s
+Edge cut: 341
+CCM: 0.66154
+
+
+6. KaMinPar
+Edge cut:         391
+Cardinality Compliance Metric (CCM): 0.649
+Run time: 0.330 seconds
+************************************************
+***********************************************
+**********************************************
+
+############### Symmetric Skewness [3902, 3901, 3901, 3902] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Total Time without Refinement: 29.967 s
+Edge Cut: 1140.33
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 0.88 s
+Edge Cut: 166.09
+CCM: 0.0
+
+2. Proposed algorithm(w/PRRP):
+
+Averages:
+
+Total Time with Refinement: 31.290 s
+New Edge Cut: 839.67
+CCM: 0.0
+
+Standard Deviations:
+
+Total Time with Refinement: 1.40 s
+New Edge Cut: 80.24
+CCM: 0.0
+
+
+
+3. Proposed algorithm without merge and split phases:
+
+Averages:
+
+ILP Improvement Time: 25.15 s
+New Edge Cut: 1485.33
+Total Time with Refinement: 26.62 s
+CCM: 0.0
+
+Standard Deviations:
+
+New Edge Cut: 213.18
+Total Time with Refinement: 19.01 s 
+CCM: 0.0
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Total Time without Refinement: 1.48 s
+Edge Cut: 2993.67
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 0.071 s
+Edge Cut: 457.75
+CCM: 0.0
+
+
+5. KaHIP
+ILP took 0.33s
+Edge cut: 341
+CCM: 0.015
+
+
+6. KaMinPar
+Edge cut:         391
+Cardinality Compliance Metric (CCM): 0.0038
+Run time: 0.330 seconds
+************************************************
+***********************************************
+**********************************************
+
+############### Negative Skewness [3000, 4200, 4200, 4206] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Total Time without Refinement: 30.675 s
+Edge Cut: 1234.0
+CCM: 0.0 
+
+Standard Deviations:
+Total Time without Refinement: 0.63 s
+Edge Cut: 320.45
+CCM: 0.0 
+
+2. Proposed algorithm(w/PRRP):
+
+Averages:
+
+Total Time with Refinement: 30.675 s
+Edge Cut: 1234.0
+
+Standard Deviations:
+
+Edge Cut: 320.45
+Total Time with Refinement: 0.63 s
+
+3. Proposed algorithm without merge and split phases:
+
+Averages:
+
+
+Total Time with Refinement: 9.256 s
+New Edge Cut: 1488.0
+CCM: 0.0
+
+Standard Deviations:
+
+
+Total Time with Refinement: 3.24 s
+New Edge Cut: 128.69
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Total Time without Refinement: 1.546 s
+Edge Cut: 2893.67
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 0.079 s
+Edge Cut: 162.87
+CCM: 0.0
+
+5. KaHIP
+ILP took 0.33s
+Partitioning 0.530187
+Edge cut: 341
+CCM: 0.107
+
+
+6. KaMinPar
+Edge cut:         391
+Cardinality Compliance Metric (CCM): 0.119
+Run time: 0.330 seconds
+************************************************
+***********************************************
+**********************************************
+
+############### High Negative Skewness [1200, 4802, 4802, 4802] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Total Time without Refinement: 29.03 s
+Edge Cut: 1432.33
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 2.01 s
+Edge Cut: 240.89
+CCM: 0.0
+2. Proposed algorithm(w/PRRP):
+
+Averages:
+
+Total Time with Refinement: 32.74 s
+New Edge Cut: 862.0
+CCM: 0.0
+
+Standard Deviations:
+
+Total Time with Refinement: 4.14 s
+New Edge Cut: 108.74
+CCM: 0.0
+
+3. Proposed algorithm without merge and split phases:
+
+Averages:
+
+
+New Edge Cut: 1452.67
+Total Time with Refinement: 10.51 s
+CCM: 0.0
+
+Standard Deviations:
+
+New Edge Cut: 130.49
+Total Time with Refinement: 3.22 s
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Total Time without Refinement: 1.404 s
+Edge Cut: 2761.33
+CCM: 0.0
+
+Standard Deviations:
+Edge Cut: 240.96
+Total Time without Refinement: 0.047 s
+CCM: 0.0
+********************************************Graph #1: PGPgiantcompo.graph***************************
+***********************************************Graph #1: PGPgiantcompo.graph*************************
+**********************************************Graph #1: PGPgiantcompo.graph************************
+
+
+Graph #1: PGPgiantcompo.graph
+############### High Positive Skewness [8040, 2010, 505, 125] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Total Time without Refinement: 27.94 s
+Edge Cut: 2186.67
+CCM: 0.0
+
+Standard Deviations:
+Edge Cut: 282.71
+Total Time without Refinement: 0.55 s
+CCM: 0.0
+
+2. Proposed algorithm(w/PRRP):
+
+Averages:
+Edge Cut: 2186.67
+Total Time with Refinement: 27.94 s
+CCM: 0.0
+
+Standard Deviations:
+
+Edge Cut: 282.71
+Total Time with Refinement: 0.55 s
+CCM: 0.0
+
+3. Proposed algorithm without merge and split phases:
+
+Averages:
+
+Edge Cut: 4234.67
+Total Time with Refinement: 10.57 s
+CCM: 0.0
+
+Standard Deviations:
+
+Edge Cut: 414.76
+Total Time with Refinement: 0.22 s
+CCM: 0.0
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Edge Cut: 4234.67
+Total Time without Refinement: 10.41 s
+CCM: 0.0
+
+Standard Deviations:
+
+Edge Cut: 414.76
+Total Time without Refinement: 0.21 s
+CCM: 0.0
+
+5. KaHIP
+ILP took 0.33s
+Edge cut: 782
+CCM: 0.9908
+
+
+6. KaMinPar
+Edge cut:         725
+Cardinality Compliance Metric (CCM): 1.004
+Run time: 0.330 seconds
+
+
+************************************************
+***********************************************
+**********************************************
+
+############### Positive Skewness [5700, 2840, 1420, 720] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Total Time without Refinement: 27.42 s
+Edge Cut: 2667.0
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 2.51 s
+Edge Cut: 138.13
+CCM: 0.0
+
+2. Proposed algorithm(w/PRRP):
+
+Averages:
+
+Total Time with Refinement: 524.00 s
+New Edge Cut: 1316.67
+CCM: 0.0
+
+
+Standard Deviations:
+
+Total Time with Refinement: 90.24 s
+New Edge Cut: 150.24
+CCM: 0.0
+
+
+
+
+3. Proposed algorithm without merge and split phases:
+
+
+Averages:
+
+
+Total Time with Refinement: 17.624 s
+Edge Cut: 4869.0
+CCM: 0.0
+
+
+Standard Deviations:
+
+
+Total Time with Refinement: 0.086 s 
+Edge Cut: 291.50
+CCM: 0.0
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Total Time without Refinement: 17.467 s
+Edge Cut: 4869.0
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 0.079 s
+Edge Cut: 291.50
+CCM: 0.0
+
+5. KaHIP
+ILP took 8.68
+Edge cut: 782
+CCM: 0.5704
+
+
+6. KaMinPar
+Edge cut:         725
+Cardinality Compliance Metric (CCM): 0.613858
+Run time: 0.340 seconds
+
+
+************************************************
+***********************************************
+**********************************************
+
+############### Symmetric Skewness [2670, 2670, 2670, 2670] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Total Time without Refinement: 28.85 s
+Edge Cut: 3201.67
+CCM: 0.0
+
+Standard Deviations:
+
+Edge Cut: 102.92
+Total Time without Refinement: 1.08 s
+CCM: 0.0
+
+2. Proposed algorithm(w/PRRP):
+Averages:
+
+
+New Edge Cut: 1543.33
+Total Time with Refinement: 800.75 s
+CCM: 0.0
+
+Standard Deviations:
+
+New Edge Cut: 40.05
+Total Time with Refinement: 510.60 s
+CCM: 0.0
+
+
+3. Proposed algorithm without merge and split phases:
+
+
+Averages:
+
+
+
+Total Time with Refinement: 1364.89 s
+New Edge Cut: 1627.33
+CCM: 0.0
+
+Standard Deviations:
+
+Total Time with Refinement: 351.12 s
+New Edge Cut: 24.73
+CCM: 0.0 
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Total Time without Refinement: 1.866 s
+Edge Cut: 4593.67
+CCM: 0.0
+Standard Deviations:
+Total Time without Refinement: 0.346 s
+Edge Cut: 113.50
+CCM: 0.0 
+
+
+5. KaHIP
+ILP took 10.26
+Partitioning 2.23
+Edge cut: 782
+CCM: 0.041573
+
+
+6. KaMinPar
+Edge cut:         725
+Cardinality Compliance Metric (CCM): 0.015730
+Run time: 0.330 seconds
+
+
+************************************************
+***********************************************
+**********************************************
+
+############### Negative  Skewness [2136, 3204, 3204, 2136] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Edge Cut: 3077.67
+Total Time without Refinement: 28.76 s
+CCM: 0.0
+
+Standard Deviations:
+Edge Cut: 58.00
+Total Time without Refinement: 2.23 s
+CCM: 0.0
+
+Proposed algorithm(w/PRRP):
+
+Averages:
+
+New Edge Cut: 1467.0
+Total Time with Refinement: 806.95 s
+CCM: 0.0
+
+Standard Deviations:
+
+New Edge Cut: 58.42
+Total Time with Refinement: 237.04 s 
+CCM: 0.0
+
+3. Proposed algorithm without merge and split phases:
+
+
+Averages:
+
+
+New Edge Cut: 1713.0
+Total Time with Refinement: 2411.51 s
+CCM: 0.0
+
+Standard Deviations:
+
+
+New Edge Cut: 173.95
+Total Time with Refinement: 0.44 s
+CCM: 0.0
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Total Time without Refinement: 11.51 s
+Edge Cut: 4635.33
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 0.44 s
+Edge Cut: 280.10
+CCM: 0.0
+
+
+5. KaHIP
+ILP took 13.73
+Edge cut: 782
+CCM: 0.173
+
+
+6. KaMinPar
+Edge cut:         725
+Cardinality Compliance Metric (CCM): 0.203558
+Run time: 0.342 seconds
+
+************************************************
+***********************************************
+**********************************************
+
+############### High Negative Skewness [712, 3566, 3566, 2836] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Edge Cut: 2469.0
+Total Time without Refinement: 19.65 s
+CCM: 0.0
+
+Standard Deviations:
+Edge Cut: 141.85
+Total Time without Refinement: 0.55 s
+CCM: 0.0
+Proposed algorithm(w/PRRP):
+
+
+Averages:
+New Edge Cut: 1455.67
+Total Time with Refinement: 208.34 s
+CCM: 0.0
+
+Standard Deviations:
+
+New Edge Cut: 24.93
+Total Time with Refinement: 228.27 s
+CCM: 0.0
+
+3. Proposed algorithm without merge and split phases:
+
+
+Averages:
+
+Total Time Coarsening: 1052.33 ms
+Total Time Initial Partitioning: 16285.33 ms
+Total Time Uncoarsening: 45.0 ms
+ILP Improvement Time: 552.33 s
+Edge Cut: 4413.33
+New Edge Cut: 1290.67
+Total Time without Refinement: 17.38 s
+Total Time with Refinement: 569.72 s
+
+Standard Deviations:
+
+
+New Edge Cut: 84.78
+
+Total Time with Refinement: 133.83 s
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Total Time without Refinement: 0.37 s
+Edge Cut: 517.53
+CCM: 0.0
+
+5. KaHIP
+ILP took 8.93
+Edge cut: 782
+CCM: 0.381
+
+6. KaMinPar
+Edge cut:         725
+Cardinality Compliance Metric (CCM): 0.367790
+Run time: 0.342 seconds
+
+
+************************************************
+***********************************************
+**********************************************
+
+
+
+********************************************Graph #3: email.graph***************************
+***********************************************Graph #3: email.graph*************************
+**********************************************Graph #3: email.graph************************
+
+
+Graph #3: email.graph
+############### High Positive Skewness [852, 213, 53, 15]  ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Total Time without Refinement: 2.48 s
+Edge Cut: 1285.33
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 0.09 s
+Edge Cut: 137.73
+CCM: 0.0
+
+2. Proposed algorithm(w/PRRP):
+
+
+Averages:
+
+
+
+New Edge Cut: 1285.33
+Total Time with Refinement: 21.86 s
+CCM: 0.0
+
+Standard Deviations:
+
+New Edge Cut: 137.73
+Total Time with Refinement: 14.35 s 
+CCM: 0.0
+
+
+3. Proposed algorithm without merge and split phases:
+
+
+Averages:
+
+
+Total Time with Refinement: 1.22 s
+New Edge Cut: 0.0
+CCM: 0.0
+
+Standard Deviations:
+
+Total Time with Refinement: 0.03 s
+New Edge Cut: 0.0
+CCM: 0.0
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Total Time without Refinement: 1.22 s
+Edge Cut: 1489.33
+CCM: 0.0
+
+Standard Deviations: 
+Total Time without Refinement: 0.03 s
+Edge Cut: 56.10
+CCM: 0.0
+
+5. KaHIP
+ILP took 2400s Time limit
+Edge cut: 1263
+CCM: 0.986
+
+
+6. KaMinPar
+Edge cut:         1259
+Cardinality Compliance Metric (CCM): 1.004413
+Run time: 0.123 seconds
+
+
+
+############### Positive Skewness [606, 302, 151, 74] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Edge Cut: 1902.33
+Total Time without Refinement: 4.996 s
+CCM: 0.0
+
+Standard Deviations:
+
+Edge Cut: 137.38
+Total Time without Refinement: 1.36 s
+CCM: 0.0
+
+Proposed algorithm(w/PRRP):
+
+
+Averages:
+
+New Edge Cut: 997.0
+Total Time with Refinement: 816.33 s
+CCM: 0.0
+
+Standard Deviations:
+
+New Edge Cut: 0.0
+Total Time with Refinement: 1124.77 s
+CCM: 0.0
+
+
+
+3. Proposed algorithm without merge and split phases:
+
+
+Averages:
+
+New Edge Cut: 0.0
+Total Time with Refinement: 1.183 s
+CCM: 0.0
+
+Standard Deviations:
+
+New Edge Cut: 0.0
+Total Time with Refinement: 0.023 s
+CCM: 0.0
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Edge Cut: 2157.0
+Total Time without Refinement: 1.183 s
+CCM: 0.0
+
+Standard Deviations:
+
+Edge Cut: 118.79
+Total Time without Refinement: 0.023 s
+CCM: 0.0
+
+5. KaHIP
+ILP took 2400s
+Partitioning 2.23
+Edge cut: 1235
+CCM: 0.6337
+
+
+6. KaMinPar
+Edge cut:         1259
+Cardinality Compliance Metric (CCM): 0.594881
+
+Run time: 0.123 seconds
+
+
+###############  Symmetric  Skewness [283, 283, 283, 284] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Edge Cut: 2460.0
+Total Time without Refinement: 3.655 s
+CCM: 0.0
+
+Standard Deviations:
+Edge Cut: 24.49
+Total Time without Refinement: 0.79 s
+CCM: 0.0
+
+Proposed algorithm(w/PRRP):
+
+
+Averages:
+
+New Edge Cut: 1314.67
+Total Time with Refinement: 2403.655 s
+CCM: 0.0
+
+Standard Deviations:
+
+New Edge Cut: 224.69
+Total Time with Refinement: 0.79 s
+CCM: 0.0
+
+
+3. Proposed algorithm without merge and split phases:
+
+Averages:
+
+
+New Edge Cut: 1912.33
+Total Time with Refinement: 2400.405 s
+CCM: 0.0
+
+
+Standard Deviations:
+
+New Edge Cut: 6.13
+Total Time with Refinement: 0.011 s 
+CCM: 0.0
+
+
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages: 
+Total Time without Refinement: 0.405 s
+Edge Cut: 2707.67
+CCM: 0.0
+
+Standard Deviations:
+Edge Cut: 10.21
+Total Time without Refinement: 0.011 s
+CCM: 0.0
+
+5. KaHIP
+ILP took 2400s
+Edge cut: 1235
+CCM: 0.6337
+
+
+6. KaMinPar
+Edge cut:         1259
+Cardinality Compliance Metric (CCM): 0.594881
+Run time: 0.340
+############### Negative Skewness [226, 302, 302, 303] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Edge Cut: 2510.33
+Total Time without Refinement: 2.922 s
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 0.039 s
+Edge Cut: 8.18
+CCM: 0.0
+
+2. Proposed algorithm(w/PRRP):
+
+Averages:
+
+New Edge Cut: 1665.33
+Total Time with Refinement: 2402.922 s
+CCM: 0.0
+
+Standard Deviations:
+
+New Edge Cut: 12.26
+Total Time with Refinement: 0.039 s
+CCM: 0.0
+
+3. Proposed algorithm without merge and split phases:
+
+
+Averages:
+
+
+New Edge Cut: 1890.33
+Total Time with Refinement: 2400.366 s
+CCM: 0.0
+
+Standard Deviations:
+
+New Edge Cut: 8.18
+Total Time with Refinement: 0.0031 s 
+CCM: 0.0
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Edge Cut: 2561.0
+Total Time without Refinement: 0.366 s
+CCM: 0.0
+
+Standard Deviations:
+
+Edge Cut: 8.29
+Total Time without Refinement: 0.0031 s
+CCM: 0.0
+
+5. KaHIP
+ILP took 2400s
+Partitioning 2.23
+Edge cut: 1235
+CCM: 0.116505
+
+
+6. KaMinPar
+Edge cut:         1259
+Cardinality Compliance Metric (CCM): 0.010591
+run time: 0.310
+############### Highly Negative Skewness [75, 352, 352, 354] ############################
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Edge Cut: 2510.33
+Total Time without Refinement: 2.912 s
+CCM: 0.0
+
+Standard Deviations:
+
+Edge Cut: 8.18
+Total Time without Refinement: 0.051 s
+CCM: 0.0
+
+2. Proposed algorithm(w/PRRP):
+
+
+Averages:
+
+New Edge Cut: 1662.0
+Total Time with Refinement: 2402.912 s
+CCM: 0.0
+
+
+Standard Deviations:
+
+New Edge Cut: 8.64
+Total Time with Refinement: 0.051 s
+CCM: 0.0
+
+3. Proposed algorithm without merge and split phases:
+
+Averages:
+
+
+New Edge Cut: 1872.0
+Total Time with Refinement: 2400.391 s
+CCM: 0.0
+
+
+Standard Deviations:
+
+
+New Edge Cut: 8.64
+Total Time with Refinement: 0.011 s
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Edge Cut: 2534.0
+Total Time without Refinement: 0.391 s
+CCM: 0.0
+
+Standard Deviations:
+
+Edge Cut: 12.33
+Total Time without Refinement: 0.011 s
+CCM: 0.0
+
+
+5. KaHIP
+ILP took 2400s
+Partitioning 2.23
+Edge cut: 1235
+CCM: 0.383054
+
+
+6. KaMinPar
+Edge cut:         1259
+Cardinality Compliance Metric (CCM): 0.367167
+Run time: 0.380

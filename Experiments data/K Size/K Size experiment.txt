@@ -1,0 +1,601 @@
+k = 8
+1000, 1000, 1200, 1200, 1400, 2000, 2800, 2080
+contraction limit at 75%, 
+slightly positive skew
+
+
+Proposed solution without ILP
+Total time = 42.429 s
+Edge Cut: 6344
+Cardinality Compliance Metric (CCM): 0.37715355805243445
+Partition 0 is not contiguous. It has 7 connected components.
+Partition 1 is not contiguous. It has 13 connected components.
+Partition 2 is not contiguous. It has 4 connected components.
+Partition 3 is not contiguous. It has 7 connected components.
+Partition 4 is not contiguous. It has 10 connected components.
+Partition 5 is not contiguous. It has 497 connected components.
+Partition 6 is not contiguous. It has 308 connected components.
+Partition 7 is not contiguous. It has 1226 connected components.
+
+Proposed solution with ILP
+Total time = 87.809
+Edge Cut: 6344
+Normalized Cardinality Difference Metric (NCDM): 0.18970037453183522
+Region 0:
+Node count: 1002
+Node weight summation: 1002
+Region 1:
+Node count: 1002
+Node weight summation: 1002
+Region 2:
+Node count: 1202
+Node weight summation: 1202
+Region 3:
+Node count: 1202
+Node weight summation: 1202
+Region 4:
+Node count: 1402
+Node weight summation: 1402
+Region 5:
+Node count: 2002
+Node weight summation: 2002
+Region 6:
+Node count: 787
+Node weight summation: 787
+Region 7:
+Node count: 2081
+Node weight summation: 2081
+Partition 0 is not contiguous. It has 7 connected components.
+Partition 1 is not contiguous. It has 13 connected components.
+Partition 2 is not contiguous. It has 4 connected components.
+Partition 3 is not contiguous. It has 7 connected components.
+Partition 4 is not contiguous. It has 10 connected components.
+Partition 5 is not contiguous. It has 497 connected components.
+Partition 6 is not contiguous. It has 308 connected components.
+Partition 7 is not contiguous. It has 1226 connected components.
+
+
+
+k = 16
+617,719,589,574,760,700,705,675,627,670,607,696,710,604,620,807
+contraction limit at 75%, 
+slightly positive skew
+
+Proposed solution without ILP
+
+Total time: 49.719 s
+Edge Cut: 7291
+Cardinality Compliance Metric (CCM): 0.05561797752808989
+Partition 0 is not contiguous. It has 19 connected components.
+Partition 5 is not contiguous. It has 115 connected components.
+Partition 6 is not contiguous. It has 78 connected components.
+Partition 7 is not contiguous. It has 10 connected components.
+Partition 10 is not contiguous. It has 39 connected components.
+Partition 11 is not contiguous. It has 29 connected components.
+Partition 12 is not contiguous. It has 482 connected components.
+Partition 13 is not contiguous. It has 414 connected components.
+Partition 14 is not contiguous. It has 441 connected components.
+Partition 15 is not contiguous. It has 639 connected components.
+The program ends here.
+
+Proposed solution with ILP
+Time limit of 3600 was reached before getting a better edge cut
+cut 			20364
+Normalized Cardinality Difference Metric (NCDM): 0.0
+
+Region 0:
+Node count: 617
+Node weight summation: 617
+Region 1:
+Node count: 719
+Node weight summation: 719
+Region 2:
+Node count: 589
+Node weight summation: 589
+Region 3:
+Node count: 574
+Node weight summation: 574
+Region 4:
+Node count: 760
+Node weight summation: 760
+Region 5:
+Node count: 700
+Node weight summation: 700
+Region 6:
+Node count: 705
+Node weight summation: 705
+Region 7:
+Node count: 675
+Node weight summation: 675
+Region 8:
+Node count: 627
+Node weight summation: 627
+Region 9:
+Node count: 670
+Node weight summation: 670
+Region 10:
+Node count: 607
+Node weight summation: 607
+Region 11:
+Node count: 696
+Node weight summation: 696
+Region 12:
+Node count: 710
+Node weight summation: 710
+Region 13:
+Node count: 604
+Node weight summation: 604
+Region 14:
+Node count: 620
+Node weight summation: 620
+Region 15:
+Node count: 807
+Node weight summation: 807
+Partition 0 is not contiguous. It has 482 connected components.
+Partition 1 is not contiguous. It has 542 connected components.
+Partition 2 is not contiguous. It has 414 connected components.
+Partition 3 is not contiguous. It has 431 connected components.
+Partition 4 is not contiguous. It has 564 connected components.
+Partition 5 is not contiguous. It has 529 connected components.
+Partition 6 is not contiguous. It has 549 connected components.
+Partition 7 is not contiguous. It has 485 connected components.
+Partition 8 is not contiguous. It has 458 connected components.
+Partition 9 is not contiguous. It has 524 connected components.
+Partition 10 is not contiguous. It has 449 connected components.
+Partition 11 is not contiguous. It has 507 connected components.
+Partition 12 is not contiguous. It has 602 connected components.
+Partition 13 is not contiguous. It has 521 connected components.
+Partition 14 is not contiguous. It has 523 connected components.
+Partition 15 is not contiguous. It has 694 connected components.
+
+
+
+Results of this partition without merge split phases but without ILP:
+total time: 11.948s
+Edge Cut: 5378
+Cardinality Compliance Metric (CCM): 0.0
+Partition 0 is not contiguous. It has 2 connected components.
+Partition 2 is not contiguous. It has 20 connected components.
+Partition 3 is not contiguous. It has 9 connected components.
+Partition 4 is not contiguous. It has 7 connected components.
+Partition 5 is not contiguous. It has 10 connected components.
+Partition 6 is not contiguous. It has 12 connected components.
+Partition 7 is not contiguous. It has 7 connected components.
+Partition 8 is not contiguous. It has 42 connected components.
+Partition 9 is not contiguous. It has 31 connected components.
+Partition 10 is not contiguous. It has 23 connected components.
+Partition 11 is not contiguous. It has 77 connected components.
+Partition 12 is not contiguous. It has 175 connected components.
+Partition 13 is not contiguous. It has 211 connected components.
+Partition 14 is not contiguous. It has 57 connected components.
+Partition 15 is not contiguous. It has 320 connected components.
+The program ends here.
+
+
+
+Proposed solution without merge and split phase but with The refinemnt algorithm
+cut 			19943
+Time limit was reached 3605.854
+Normalized Cardinality Difference Metric (NCDM): 0.0
+Node count: 617
+Node weight summation: 617
+Region 1:
+Node count: 719
+Node weight summation: 719
+Region 2:
+Node count: 589
+Node weight summation: 589
+Region 3:
+Node count: 574
+Node weight summation: 574
+Region 4:
+Node count: 760
+Node weight summation: 760
+Region 5:
+Node count: 700
+Node weight summation: 700
+Region 6:
+Node count: 705
+Node weight summation: 705
+Region 7:
+Node count: 675
+Node weight summation: 675
+Region 8:
+Node count: 627
+Node weight summation: 627
+Region 9:
+Node count: 670
+Node weight summation: 670
+Region 10:
+Node count: 607
+Node weight summation: 607
+Region 11:
+Node count: 696
+Node weight summation: 696
+Region 12:
+Node count: 710
+Node weight summation: 710
+Region 13:
+Node count: 604
+Node weight summation: 604
+Region 14:
+Node count: 620
+Node weight summation: 620
+Region 15:
+Node count: 807
+Node weight summation: 807
+Partition 0 is not contiguous. It has 507 connected components.
+Partition 1 is not contiguous. It has 547 connected components.
+Partition 2 is not contiguous. It has 450 connected components.
+Partition 3 is not contiguous. It has 417 connected components.
+Partition 4 is not contiguous. It has 575 connected components.
+Partition 5 is not contiguous. It has 547 connected components.
+Partition 6 is not contiguous. It has 532 connected components.
+Partition 7 is not contiguous. It has 502 connected components.
+Partition 8 is not contiguous. It has 473 connected components.
+Partition 9 is not contiguous. It has 425 connected components.
+Partition 10 is not contiguous. It has 465 connected components.
+Partition 11 is not contiguous. It has 491 connected components.
+Partition 12 is not contiguous. It has 548 connected components.
+Partition 13 is not contiguous. It has 485 connected components.
+Partition 14 is not contiguous. It has 498 connected components.
+Partition 15 is not contiguous. It has 662 connected components.
+
+
+
+
+k = 8
+629, 630, 959, 1151, 1372, 1616, 1808, 2515
+contraction limit at 75%, 
+slightly positive skew
+Edge Cut: 5529
+total time: 30.620
+Cardinality Compliance Metric (CCM): 0.14438202247191012
+Partition 1 is not contiguous. It has 3 connected components.
+Partition 2 is not contiguous. It has 14 connected components.
+Partition 3 is not contiguous. It has 395 connected components.
+Partition 5 is not contiguous. It has 260 connected components.
+Partition 6 is not contiguous. It has 61 connected components.
+Partition 7 is not contiguous. It has 593 connected components.
+
+
+
+after running the ilp algorithm
+Time limit was reached of 3601.647
+Normalized Cardinality Difference Metric (NCDM): 0.0
+cut 			6052
+Region 0:
+Node count: 629
+Node weight summation: 629
+Region 1:
+Node count: 630
+Node weight summation: 630
+Region 2:
+Node count: 959
+Node weight summation: 959
+Region 3:
+Node count: 1151
+Node weight summation: 1151
+Region 4:
+Node count: 1372
+Node weight summation: 1372
+Region 5:
+Node count: 1616
+Node weight summation: 1616
+Region 6:
+Node count: 1808
+Node weight summation: 1808
+Region 7:
+Node count: 2515
+Node weight summation: 2515
+Region 8:
+Node count: 0
+Node weight summation: 0
+Region 9:
+Node count: 0
+Node weight summation: 0
+Region 10:
+Node count: 0
+Node weight summation: 0
+Region 11:
+Node count: 0
+Node weight summation: 0
+Region 12:
+Node count: 0
+Node weight summation: 0
+Region 13:
+Node count: 0
+Node weight summation: 0
+Region 14:
+Node count: 0
+Node weight summation: 0
+Region 15:
+Node count: 0
+Node weight summation: 0
+Partition 0 is not contiguous. It has 80 connected components.
+Partition 1 is not contiguous. It has 167 connected components.
+Partition 2 is not contiguous. It has 130 connected components.
+Partition 3 is not contiguous. It has 166 connected components.
+Partition 4 is not contiguous. It has 129 connected components.
+Partition 5 is not contiguous. It has 60 connected components.
+Partition 6 is not contiguous. It has 464 connected components.
+Partition 7 is not contiguous. It has 293 connected components.
+
+
+Proposed solution without merge and split phase but with ILP
+k=8
+Edge Cut: 4680
+Cardinality Compliance Metric (CCM): 0.0
+Total time 1.531
+Partition 0 is not contiguous. It has 3 connected components.
+Partition 1 is not contiguous. It has 11 connected components.
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 18 connected components.
+Partition 4 is not contiguous. It has 10 connected components.
+Partition 5 is not contiguous. It has 60 connected components.
+Partition 6 is not contiguous. It has 327 connected components.
+Partition 7 is not contiguous. It has 364 connected components.
+
+
+
+Proposed solution without merge and split phase and with ILP
+total time: 3601.721
+cut 			4635
+Region 0:
+Node count: 629
+Node weight summation: 629
+Region 1:
+Node count: 630
+Node weight summation: 630
+Region 2:
+Node count: 959
+Node weight summation: 959
+Region 3:
+Node count: 1151
+Node weight summation: 1151
+Region 4:
+Node count: 1372
+Node weight summation: 1372
+Region 5:
+Node count: 1616
+Node weight summation: 1616
+Region 6:
+Node count: 1808
+Node weight summation: 1808
+Region 7:
+Node count: 2515
+Node weight summation: 2515
+Partition 0 is not contiguous. It has 2 connected components.
+Partition 1 is not contiguous. It has 11 connected components.
+Partition 2 is not contiguous. It has 3 connected components.
+Partition 3 is not contiguous. It has 10 connected components.
+Partition 4 is not contiguous. It has 11 connected components.
+Partition 5 is not contiguous. It has 47 connected components.
+Partition 6 is not contiguous. It has 333 connected components.
+Partition 7 is not contiguous. It has 345 connected components.
+Normalized Cardinality Difference Metric (NCDM): 0.0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+k=2
+Graph: PGPgiantcompo
+4272, 6408
+contraction limit at 75%, 
+
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Total time: 15.934 s
+Edge Cut: 1533
+Cardinality Compliance Metric (CCM): 0.0
+Partition 0 is not contiguous. It has 15 connected components.
+Partition 1 is not contiguous. It has 18 connected components.
+
+2. Proposed algorithm(w/PRRP):
+
+Total time = 18.88s 
+cut 			785
+Cardinality Compliance Metric (CCM): 0.0
+Partition 0 is not contiguous. It has 40 connected components.
+Partition 1 is not contiguous. It has 15 connected components.
+
+3. Proposed algorithm without merge and split phases and without ILP:
+total time: 1.571s
+Edge Cut: 3048
+Partition 0 is not contiguous. It has 8 connected components.
+Partition 1 is not contiguous. It has 735 connected components.
+Cardinality Compliance Metric (CCM): 0.0
+
+
+4. Proposed algorithm without merge and split phases and without ILP:
+
+cut 			1104
+total time: 5.066 s
+Cardinality Compliance Metric (CCM): 0.0
+Partition 0 is not contiguous. It has 71 connected components.
+Partition 1 is not contiguous. It has 98 connected components.
+
+5. KaHIP
+
+6. KaMinPar
+Edge cut:         436
+Run time: 0.114s
+Cardinality Compliance Metric (CCM): 0.226592
+Block 1 has 5482 nodes and 1 components:
+Block 0 has 5198 nodes and 13 components:
+Experiment Summary:
+Graph: PGPgiantcompo
+617,719,589,574,760,700,705,675,627,670,607,696,710,604,620,807
+contraction limit at 75%, 
+slightly positive skew
+********* K = 16 *********************
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Total time: 49.719 s
+Edge Cut: 7291
+Cardinality Compliance Metric (CCM): 0.05561797752808989
+
+2. Proposed algorithm(w/PRRP):
+
+Total time = 3649.719 
+cut 			20364
+Cardinality Compliance Metric (CCM): 0.0
+
+3. Proposed algorithm without merge and split phases and without ILP:
+total time: 11.948s
+Edge Cut: 5378
+Cardinality Compliance Metric (CCM): 0.0
+
+4. Proposed algorithm without merge and split phases and without ILP:
+
+cut 			19943
+total time: 3617.802
+Cardinality Compliance Metric (CCM): 0.0
+
+5. KaHIP
+Edge cut:         4018
+Run time= 1.721s
+Cardinality Compliance Metric (CCM): 1.726
+6. KaMinPar
+Edge cut:         1671
+Run time= 0.521s
+Cardinality Compliance Metric (CCM): 0.083146
+Block 2 has 687 nodes and 1 components:
+Block 15 has 658 nodes and 4 components:
+Block 12 has 652 nodes and 4 components:
+Block 7 has 652 nodes and 1 components:
+Block 0 has 684 nodes and 1 components:
+Block 13 has 654 nodes and 4 components:
+Block 1 has 662 nodes and 14 components:
+Block 14 has 684 nodes and 1 components:
+Block 5 has 663 nodes and 1 components:
+Block 4 has 652 nodes and 13 components:
+Block 11 has 652 nodes and 16 components:
+Block 9 has 662 nodes and 7 components:
+Block 8 has 683 nodes and 1 components:
+Block 10 has 683 nodes and 1 components:
+Block 6 has 684 nodes and 2 components:
+Block 3 has 668 nodes and 11 components:
+
+********* K = 8 *********************
+629, 630, 959, 1151, 1372, 1616, 1808, 2515
+contraction limit at 75%, 
+slightly positive skew
+*************************************
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Total time = 30.620 s
+Edge Cut: 5529
+Cardinality Compliance Metric (CCM): 0.14438202247191012
+
+2. Proposed algorithm(w/PRRP):
+
+Total time = 3632.267
+Edge Cut: 6052
+Cardinality Compliance Metric (CCM): 0.0
+
+3. Proposed algorithm without merge and split phases and without ILP:
+total time: 1.531s
+Edge Cut: 4680
+Cardinality Compliance Metric (CCM): 0.0
+
+4. Proposed algorithm without merge and split phases and without ILP:
+
+cut 			4635
+total time: 3603.252
+Cardinality Compliance Metric (CCM): 0.0
+
+5. KaHIP
+
+6. KaMinPar
+Cardinality Compliance Metric (CCM): 0.371161
+Edge cut:         1096
+run time: 0.349s
+Block 0 has 1367 nodes and 6 components:
+Block 1 has 1292 nodes and 3 components:
+Block 6 has 1342 nodes and 1 components:
+Block 2 has 1350 nodes and 6 components:
+Block 7 has 1305 nodes and 13 components:
+Block 4 has 1362 nodes and 1 components:
+Block 3 has 1371 nodes and 1 components:
+Block 5 has 1291 nodes and 13 components:
+
+********* K = 4 *********************
+
+Positive Skewness [5700, 2840, 1420, 720]
+
+1. Proposed algorithm(w/PRRP) without ILP refinement:
+Averages:
+Total Time without Refinement: 27.42 s
+Edge Cut: 2667.0
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 2.51 s
+Edge Cut: 138.13
+CCM: 0.0
+
+2. Proposed algorithm(w/PRRP):
+
+Averages:
+
+Total Time with Refinement: 524.00 s
+New Edge Cut: 1316.67
+CCM: 0.0
+
+
+Standard Deviations:
+
+Total Time with Refinement: 90.24 s
+New Edge Cut: 150.24
+CCM: 0.0
+
+
+
+
+3. Proposed algorithm without merge and split phases:
+
+
+Averages:
+
+
+Total Time with Refinement: 17.624 s
+Edge Cut: 4869.0
+CCM: 0.0
+
+
+Standard Deviations:
+
+
+Total Time with Refinement: 0.086 s 
+Edge Cut: 291.50
+CCM: 0.0
+
+4. Proposed algorithm without merge and split phases and without ILP:
+Averages:
+Total Time without Refinement: 17.467 s
+Edge Cut: 4869.0
+CCM: 0.0
+
+Standard Deviations:
+Total Time without Refinement: 0.079 s
+Edge Cut: 291.50
+CCM: 0.0
+
+5. KaHIP
+ILP took 8.68
+Edge cut: 782
+CCM: 0.5704
+
+
+6. KaMinPar
+Edge cut:         725
+Cardinality Compliance Metric (CCM): 0.613858
+Run time: 0.340 seconds
