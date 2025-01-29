@@ -57,14 +57,14 @@ public class Presets {
         // Set Partition Context
         ctx.partition = new PartitionContext();
         ctx.partition.epsilon = 0.0;
-        ctx.partition.absoluteEpsilon = 0;
+        ctx.partition.absoluteEpsilon = 36261;
         ctx.partition.k = new BlockID(Integer.MAX_VALUE); // kInvalidBlockID equivalent
 
         // Set block constraints
-        ctx.partition.blockConstraints.put(new BlockWeight(3711), false);
-        ctx.partition.blockConstraints.put(new BlockWeight(4825), false);
-        ctx.partition.blockConstraints.put(new BlockWeight(6272), false);
-        ctx.partition.blockConstraints.put(new BlockWeight(8154), false);
+        ctx.partition.blockConstraints.put(new BlockWeight(72522), false);
+        ctx.partition.blockConstraints.put(new BlockWeight(94279), false);
+        ctx.partition.blockConstraints.put(new BlockWeight(122563), false);
+        ctx.partition.blockConstraints.put(new BlockWeight(159331), false);
 
 
 
@@ -84,7 +84,7 @@ public class Presets {
         ctx.coarsening.lp.isolatedNodesStrategy = IsolatedNodesClusteringStrategy.KEEP;
 
         // Additional Coarsening Settings
-        ctx.coarsening.contractionLimit = 2296;
+        ctx.coarsening.contractionLimit = 44869;
         ctx.coarsening.enforceContractionLimit = false;
         ctx.coarsening.convergenceThreshold = 0.0;
         ctx.coarsening.clusterWeightLimit = ClusterWeightLimit.EPSILON_BLOCK_WEIGHT;
