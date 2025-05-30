@@ -1,0 +1,5 @@
+# k  KaMinPar  KaHIP  ReNUP_eps0  ReNUP_eps780
+2   -21        0      -32             -16
+4   -15        0      -33             -13
+8   -7         0      -31             -19
+16  -11        0      -31             -21

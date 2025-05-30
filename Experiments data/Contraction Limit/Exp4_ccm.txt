@@ -1,0 +1,11 @@
+# Graph	KaMinPar	KaHIP	Deep Multilevel	Deep NUGP
+"Email\nn=1K" 26 26 0 10
+"PGP\nn=10K" 26 28 0 4
+"4elt\nn=16K" 26 26 0 8
+"AS\nn=22K" 32 34 0 20
+"Cond-Mat\nn=40K" 26 26 0 14
+"Delaunay\nn=65K" 27 26 0 16
+"Finan512\nn=74K" 26 28 0 12
+"598a\nn=111K" 27 26 0 11
+"Luxembourg\nn=114K" 27 26 0 15
+"Wave\nn=156K" 26 27 0 14

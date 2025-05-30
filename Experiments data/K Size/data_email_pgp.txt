@@ -1,0 +1,5 @@
+# k  KaMinPar KaHIP Deep_NUGP_eps0 Deep_NUGP_eps534
+2    14       16    0               5
+4    26       28    0               4
+8    50       51    0               3
+16   86       88    0               6

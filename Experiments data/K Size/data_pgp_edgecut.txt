@@ -1,0 +1,5 @@
+# k  KaMinPar  KaHIP  ReNUP_eps0  ReNUP_eps534
+2    34       0       27          31
+4    17       0       9           16
+8    21       0       3           16
+16   5        0      -6           0

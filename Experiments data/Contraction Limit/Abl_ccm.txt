@@ -1,0 +1,11 @@
+# Graph	Deep Multilevel (ε = 0.0)	ReNUP (Relaxed ε)	ReNUP + Balanced Bipartitioning	ReNUP + Balanced Refinement
+"Email\nn=1133" 0 10 0 16
+"PGP\nn=10680" 0 4 0 13
+"4elt\nn=16506" 0 8 0 15
+"BGP-AS\nn=22963" 0 20 0 24
+"Cond-Mat-2005\nn=40421" 0 14 0 19
+"Delaunay-n16\nn=65536" 0 16 0 20
+"Finan512\nn=74752" 0 12 0 18
+"598a\nn=110971" 0 11 0 24
+"luxembourg\nn=110971" 0 7 0 15
+"Wave\nn=156317" 0 14 0 22
