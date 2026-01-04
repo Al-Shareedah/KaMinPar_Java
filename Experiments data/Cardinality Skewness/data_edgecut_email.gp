@@ -8,21 +8,21 @@ set ylabel "Improvement over KaHIP (%)" font ",42"
 
 # Tick and axis formatting
 set format y "%g%%"
-set tics font ",37"
-set yrange [-20:60]
+set tics font ",39"
+set yrange [-20:62]
 
 # Legend
-set key top right font ",32" box opaque
+set key top right font ",40" box opaque
 
 # Grid and margin
 set grid
 
 
 # Line styles
-set style line 1 lw 5 pt 7 ps 4 lc rgb "#1f77b4"   # KaMinPar
-set style line 2 lw 5 pt 9 ps 4 lc rgb "#ff7f0e"   # KaHIP
-set style line 3 lw 5 pt 5 ps 4 lc rgb "#2ca02c"   # ReNUP ε=0
-set style line 4 lw 5 pt 13 ps 4 lc rgb "#d62728"  # ReNUP ε=50
+set style line 1 lw 5 pt 7 ps 5 lc rgb "#1f77b4"   # KaMinPar
+set style line 2 lw 5 pt 9 ps 5 lc rgb "#ff7f0e"   # KaHIP
+set style line 3 lw 5 pt 5 ps 5 lc rgb "#2ca02c"   # ReNUP ε=0
+set style line 4 lw 5 pt 13 ps 5 lc rgb "#d62728"  # ReNUP ε=50
 
 # Plot
 plot "data_edgecut_email.txt" using 1:2 title "KaMinPar"         with linespoints ls 1, \
